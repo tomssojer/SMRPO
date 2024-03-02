@@ -33,3 +33,9 @@ npm run build
 ```sh
 npm run lint
 ```
+
+### Run unit tests with jest
+Create a file *.test.js by the file you want to test and then run
+```sh
+npm test
+```
