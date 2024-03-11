@@ -1,6 +1,6 @@
 <template>
-    <v-dialog v-model="show" class="dlgWindow" width="50%">
-      <v-card title="Nov uporabnik">
+    <v-dialog v-model="show" class="dlgWindow" width="40%">
+      <v-card :title="edit ? 'Uredi uporabnika' : 'Nov uporabnik'">
         <v-card-text>
           <v-row dense>
             <v-text-field

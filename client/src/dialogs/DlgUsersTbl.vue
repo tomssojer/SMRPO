@@ -21,15 +21,12 @@
             variant="text"
             @click="show = false"
           ></v-btn>
-          <v-btn @click="$refs.dlgEditUser.edit = true; $refs.dlgEditUser.show = true;" class="dlgButton">Uredi uporabnike</v-btn>
-
         </v-card-actions>
       </v-card>
     </v-dialog>
     <dlg-new-user ref="dlgEditUser"></dlg-new-user>
   </template>
   <script>
-  // import { mdiAccount } from "@mdi/js";
   import DlgNewUser from '../dialogs/DlgNewUser.vue';
 
   export default {
@@ -40,7 +37,7 @@
       return {
         show: false,
         search: '',
-        headers: [
+        headers: [ //doda se še ostale relevantne podatke uporabnikov
           {
             align: 'start',
             key: 'user',
@@ -52,7 +49,7 @@
             title: 'E-mail'
           }
         ],
-        users: [
+        users: [ 
           {
             user: 'Janez',
             email: 'Janez@Novak.si'
@@ -68,6 +65,7 @@
       editUser(click, item) {
         console.log(item.item);
         this.$refs.dlgEditUser.dlgData = item.item;
+        this.$refs.dlgEditUser.edit = true;
         this.$refs.dlgEditUser.show = true;
       }
     },
