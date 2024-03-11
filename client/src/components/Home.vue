@@ -3,6 +3,9 @@ import { jwtDecode } from "jwt-decode";
 import { ref } from "vue";
 import { useRouter } from "vue-router";
 import { supabase } from "../lib/supabaseClient";
+import Organization from "./Organization.vue";
+import Project from "./Project.vue";
+import User from "./User.vue";
 
 defineProps<{ msg: string }>();
 
@@ -34,9 +37,9 @@ const { subscription: authListener } = supabase.auth.onAuthStateChange(
         permanent
       >
         <v-list color="transparent">
-          <v-list-item prepend-icon="mdi-domain" title="Organizations"></v-list-item>
-          <v-list-item prepend-icon="mdi-view-dashboard" title="Projects"></v-list-item>
-          <v-list-item prepend-icon="mdi-account-box" title="Users"></v-list-item>
+          <v-list-item @click="selected = Organization" prepend-icon="mdi-domain" title="Organizations"></v-list-item>
+          <v-list-item @click="selected = Project" prepend-icon="mdi-view-dashboard" title="Projects"></v-list-item>
+          <v-list-item @click="selected = User" prepend-icon="mdi-account-box" title="Users"></v-list-item>
           
           <v-btn @click="$refs.dlgNewUser.edit = false; $refs.dlgNewUser.show = true" class="dlgButton">Nov uporabnik</v-btn>
           <dlg-new-user ref="dlgNewUser"></dlg-new-user>
@@ -52,6 +55,10 @@ const { subscription: authListener } = supabase.auth.onAuthStateChange(
           </div>
         </template>
       </v-navigation-drawer>
+      
+      <v-main>
+        <component :is="selected" />
+      </v-main>
     </v-layout>
   </v-card>
 </template>
@@ -63,6 +70,7 @@ import DlgUsersTbl from '../dialogs/DlgUsersTbl.vue';
 export default {
   data() {
     return {
+      selected: Organization, // Add this line
      }
   },
 
