@@ -1,8 +1,8 @@
 import { createApp } from "vue";
 import App from "./App.vue";
 import "./index.css";
-
 import "./style.css";
+import '@mdi/font/css/materialdesignicons.css' // ikone
 
 // Vuetify
 import { createVuetify } from "vuetify";

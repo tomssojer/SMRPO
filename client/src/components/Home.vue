@@ -27,5 +27,25 @@ const { subscription: authListener } = supabase.auth.onAuthStateChange(
 
 <template>
   <h1 class="text-lg underline">Hello world!dfas</h1>
+  <v-btn @click="$refs.dlgNewUser.edit = false; $refs.dlgNewUser.show = true" class="dlgButton">Nov uporabnik</v-btn>
+    <dlg-new-user ref="dlgNewUser"></dlg-new-user>
+    <v-btn @click="$refs.dlgUsersTbl.show = true" class="dlgButton">Uredi uporabnike</v-btn>
+    <dlg-users-tbl ref="dlgUsersTbl"></dlg-users-tbl>
   <button @click="signOut">Sign out</button>
 </template>
+
+<script lang="ts">
+import DlgNewUser from '../dialogs/DlgNewUser.vue';
+import DlgNewProj from '../dialogs/DlgNewProj.vue';
+import DlgUsersTbl from '../dialogs/DlgUsersTbl.vue';
+export default {
+  components: {
+    DlgNewUser,
+  },
+  data() {
+    return {
+     }
+  },
+
+};
+</script>
