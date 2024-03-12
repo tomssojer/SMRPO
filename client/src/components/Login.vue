@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
-import { useAuth } from "../hooks/useAuth";
-import { supabase } from "../lib/supabaseClient";
+import { onMounted, ref } from 'vue';
+import { useAuth } from '../hooks/useAuth';
+import { supabase } from '../lib/supabaseClient';
 
 const session = ref();
 
 const loading = ref(false);
-const email = ref("");
-const password = ref("");
+const email = ref('');
+const password = ref('');
 const { checkSession, onAuthStateChange } = useAuth();
 
 onMounted(() => {
@@ -38,31 +38,25 @@ const handleLogin = async () => {
 <template>
   <Account v-if="session" :session="session" />
 
-  <form
-    class="flex items-center justify-center min-h-screen"
-    @submit.prevent="handleLogin"
-  >
+  <form class="flex items-center justify-center min-h-screen" @submit.prevent="handleLogin">
     <div class="flex flex-col px-8 pt-6 pb-8 mb-4 bg-white rounded shadow-md">
       <input
         class="w-full px-3 py-2 leading-tight text-gray-700 border rounded shadow"
         required
         type="email"
         placeholder="Your email"
-        v-model="email"
-      />
+        v-model="email" />
       <input
         class="w-full px-3 py-2 leading-tight text-gray-700 border rounded shadow"
         required
         type="password"
         placeholder="Your password"
-        v-model="password"
-      />
+        v-model="password" />
       <input
         class="px-4 py-2 font-bold text-white bg-blue-500 rounded hover:bg-blue-700e"
         type="submit"
         :value="loading ? 'Loading' : 'Sign in'"
-        :disabled="loading"
-      />
+        :disabled="loading" />
       <router-link to="/register" class="mt-4 text-blue-500 hover:text-blue-700"
         >Don't have an account? Sign up</router-link
       >

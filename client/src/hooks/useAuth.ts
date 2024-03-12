@@ -10,7 +10,7 @@ export function useAuth() {
   const checkSession = async () => {
     const { data } = await supabase.auth.getSession();
     session.value = data?.session;
-    console.log(session.value)
+    console.log(session.value);
     if (session.value) {
       router.push('/');
     }
