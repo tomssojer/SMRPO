@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { jwtDecode } from 'jwt-decode';
 import { useRouter } from 'vue-router';
 import { supabase } from '../lib/supabaseClient';
 import Organization from './Organization.vue';
@@ -14,14 +13,12 @@ const signOut = async () => {
   await supabase.auth.signOut();
   router.push('/login');
 };
+const store = useStore();
 
-supabase.auth.onAuthStateChange(async (event, session) => {
-  if (session) {
-    console.log(session);
-    const jwt = jwtDecode(session.access_token);
-    console.log(jwt);
-  }
-});
+// Access the session from the store
+const userRole = computed(() => store.state.userRole);
+
+console.log('user role', userRole.value);
 </script>
 
 <template>
@@ -70,6 +67,8 @@ supabase.auth.onAuthStateChange(async (event, session) => {
 </template>
 
 <script lang="ts">
+import { computed } from 'vue';
+import { useStore } from 'vuex';
 import DlgNewUser from '../dialogs/DlgNewUser.vue';
 import DlgUsersTbl from '../dialogs/DlgUsersTbl.vue';
 export default {

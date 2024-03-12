@@ -1,14 +1,14 @@
-import { createRouter, createWebHistory } from "vue-router";
-import Home from "./components/Home.vue";
-import Login from "./components/Login.vue";
-import Registration from "./components/Registration.vue";
-import { supabase } from "./lib/supabaseClient";
+import { createRouter, createWebHistory } from 'vue-router';
+import Home from './components/Home.vue';
+import Login from './components/Login.vue';
+import Registration from './components/Registration.vue';
+import { supabase } from './lib/supabaseClient';
 
 // Create a promise that resolves when the session is checked
 const routes = [
-  { path: "/login", component: Login },
-  { path: "/register", component: Registration },
-  { path: "/", component: Home, meta: { requiresAuth: true } },
+  { path: '/login', component: Login, meta: { guestOnly: true } },
+  { path: '/register', component: Registration, meta: { guestOnly: true } },
+  { path: '/', component: Home, meta: { requiresAuth: true } },
 ];
 
 const router = createRouter({
@@ -19,9 +19,13 @@ const router = createRouter({
 router.beforeEach(async (to, from, next) => {
   const { data } = await supabase.auth.getSession();
   const requiresAuth = to.matched.some((record) => record.meta.requiresAuth);
-  if (requiresAuth && !data.session) {
-    console.log("no session");
-    next("/login");
+  const guestOnly = to.matched.some((record) => record.meta.guestOnly);
+  if (requiresAuth && !data?.session) {
+    console.log('no session');
+    next('/login');
+  } else if (guestOnly && data?.session) {
+    console.log('session exists');
+    next('/');
   } else {
     next();
   }

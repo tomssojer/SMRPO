@@ -1,19 +1,13 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
-import { useAuth } from '../hooks/useAuth';
+import { ref } from 'vue';
+import { useRouter } from 'vue-router';
 import { supabase } from '../lib/supabaseClient';
 const email = ref('');
 const password = ref('');
 const name = ref('');
 const surname = ref('');
 const loading = ref(false);
-
-const { checkSession, onAuthStateChange } = useAuth();
-
-onMounted(() => {
-  checkSession();
-  onAuthStateChange();
-});
+const router = useRouter();
 
 const handleSignup = async () => {
   loading.value = true;
@@ -30,6 +24,8 @@ const handleSignup = async () => {
 
   if (error) {
     alert(error);
+  } else {
+    router.push('/');
   }
   loading.value = false;
 };

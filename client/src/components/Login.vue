@@ -1,19 +1,20 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
-import { useAuth } from '../hooks/useAuth';
+import { computed, ref } from 'vue';
+import { useRouter } from 'vue-router';
+import { useStore } from 'vuex';
 import { supabase } from '../lib/supabaseClient';
-
-const session = ref();
 
 const loading = ref(false);
 const email = ref('');
 const password = ref('');
-const { checkSession, onAuthStateChange } = useAuth();
+const router = useRouter();
 
-onMounted(() => {
-  checkSession();
-  onAuthStateChange();
-});
+const store = useStore();
+
+// Access the session from the store
+const userRole = computed(() => store.state.userRole);
+
+console.log('user role', userRole.value);
 
 const handleLogin = async () => {
   try {
@@ -31,13 +32,12 @@ const handleLogin = async () => {
     }
   } finally {
     loading.value = false;
+    router.push('/');
   }
 };
 </script>
 
 <template>
-  <Account v-if="session" :session="session" />
-
   <form class="flex items-center justify-center min-h-screen" @submit.prevent="handleLogin">
     <div class="flex flex-col px-8 pt-6 pb-8 mb-4 bg-white rounded shadow-md">
       <input
