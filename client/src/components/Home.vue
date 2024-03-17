@@ -28,16 +28,19 @@ console.log('user role', userRole.value);
         <v-list color="transparent">
           <v-list-item
             @click="selected = Organization"
-            prepend-icon="mdi-domain"
-            title="Organizations"></v-list-item>
+            prepend-icon="mdi-domain">
+          <v-list-title>Organizations</v-list-title>
+          </v-list-item>
           <v-list-item
             @click="selected = Project"
-            prepend-icon="mdi-view-dashboard"
-            title="Projects"></v-list-item>
+            prepend-icon="mdi-view-dashboard">
+          <v-list-title>Projects</v-list-title>
+          </v-list-item>
           <v-list-item
             @click="selected = User"
-            prepend-icon="mdi-account-box"
-            title="Users"></v-list-item>
+            prepend-icon="mdi-account-box">
+            <v-list-title>Users</v-list-title>
+          </v-list-item>
 
           <v-btn
             @click="
