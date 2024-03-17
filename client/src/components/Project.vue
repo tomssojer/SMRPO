@@ -1,5 +1,7 @@
 <template>
-  <v-btn class="bg-deep-purple new-project-button" theme="dark" v-if="isAdmin" @click="openModal">New project</v-btn>
+  <v-btn class="bg-deep-purple new-project-button" theme="dark" v-if="isAdmin" @click="openModal"
+    >New project</v-btn
+  >
   <v-dialog v-model="isModalOpen">
     <v-card>
       <v-card-title class="headline">Modal title</v-card-title>
@@ -15,12 +17,12 @@
 </template>
 
 <script setup lang="ts">
-import { supabase } from "../lib/supabaseClient";
-import { onMounted, ref } from 'vue'
+import { onMounted, ref } from 'vue';
+import { supabase } from '../lib/supabaseClient';
 
 onMounted(() => {
   getProjects();
-})
+});
 
 const isAdmin = ref(false);
 const isModalOpen = ref(false);
@@ -43,7 +45,6 @@ supabase.auth.onAuthStateChange(async (_, session) => {
 
     const payload = JSON.parse(atob(jwt.split('.')[1]));
     isAdmin.value = payload.user_role === 'admin';
-
   } else {
     console.log('The user is not authenticated');
   }
@@ -52,16 +53,18 @@ supabase.auth.onAuthStateChange(async (_, session) => {
 const items = ref<any[]>([]);
 
 async function getProjects() {
+  const organizationId = localStorage.getItem('organizationId');
+  console.log('organizationId', organizationId);
   const { data, error } = await supabase
     .from('project')
-    .select('name, created_at, start_date, deadline');
+    .select('name, created_at, start_date, deadline')
+    .eq('organization_id', organizationId);
 
   if (error) {
-    console.error("Error fetching projects")
+    console.error('Error fetching projects');
   } else {
     items.value = data;
     isLoading.value = false;
-
   }
 }
 </script>
