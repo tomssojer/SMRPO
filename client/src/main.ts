@@ -25,7 +25,8 @@ supabase.auth.onAuthStateChange(async (event, session) => {
     console.log(session);
     const jwt = jwtDecode(session.access_token);
     console.log('jwt', jwt);
-    store.commit('setUserRole', jwt.user_role); // replace 'role' with the actual property name
+    localStorage.setItem('user_role', jwt.user_role); // replace 'role' with the actual property name
+    //store.commit('setUserRole', jwt.user_role); // replace 'role' with the actual property name
   } else {
     // Clear the user role in the Vuex store when the user logs out
     store.commit('setUserRole', null);

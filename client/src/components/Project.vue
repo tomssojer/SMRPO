@@ -95,7 +95,6 @@ supabase.auth.onAuthStateChange(async (_, session) => {
 
     const payload = JSON.parse(atob(jwt.split('.')[1]));
     isAdmin.value = payload.user_role === 'admin';
-
   } else {
     console.log('The user is not authenticated');
   }
@@ -103,12 +102,15 @@ supabase.auth.onAuthStateChange(async (_, session) => {
 
 
 async function getProjects() {
+  const organizationId = localStorage.getItem('organizationId');
+  console.log('organizationId', organizationId);
   const { data, error } = await supabase
     .from('project')
-    .select('name, created_at, start_date, deadline');
+    .select('name, created_at, start_date, deadline')
+    .eq('organization_id', organizationId);
 
   if (error) {
-    console.error("Error fetching projects")
+    console.error('Error fetching projects');
   } else {
     items.value = data;
     items.value.forEach((item: any) => {
@@ -180,3 +182,4 @@ watchEffect(() => {
   isFormValid.value = validateForm([name.value, productOwner.value, scrumMaster.value, developers.value]);
 });
 </script>
+

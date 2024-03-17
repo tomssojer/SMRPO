@@ -1,14 +1,15 @@
 <template>
-  <v-dialog v-model="show" class="dlgWindow" width="50%">
+  <!-- <v-dialog v-model="show" class="dlgWindow" width="50%"> -->
     <v-card>
       <template v-slot:text>
-        <v-text-field
+        <v-text-field 
           v-model="search"
           label="Search"
           prepend-inner-icon="mdi-magnify"
           variant="outlined"
           hide-details
-          single-line></v-text-field>
+          single-line
+          density="compact"></v-text-field>
       </template>
       <v-data-table
         density="compact"
@@ -17,17 +18,14 @@
         :search="search"
         @click:row="editUser">
       </v-data-table>
-      <v-divider></v-divider>
-      <v-card-actions>
-        <v-spacer></v-spacer>
-        <v-btn text="Close" variant="text" @click="show = false"></v-btn>
-      </v-card-actions>
     </v-card>
-  </v-dialog>
+
+  <!-- </v-dialog> -->
   <dlg-new-user ref="dlgEditUser"></dlg-new-user>
 </template>
 <script lang="ts">
-import { defineComponent, ref } from 'vue';
+import { defineComponent, ref, onMounted } from 'vue';
+import { supabase } from '../lib/supabaseClient';
 import DlgNewUser from '../dialogs/DlgNewUser.vue';
 
 export default defineComponent({
@@ -40,33 +38,32 @@ export default defineComponent({
     const headers = ref([
       {
         align: 'start',
-        key: 'user',
+        key: 'name',
         sortable: false,
-        title: 'Uporabnik',
+        title: 'Name',
       },
       {
-        key: 'email',
-        title: 'E-mail',
+        key: 'surname',
+        title: 'Surname',
       },
     ]);
-    const users = ref([
-      {
-        user: 'Janez',
-        email: 'Janez@Novak.si',
-      },
-      {
-        user: 'Jana',
-        email: 'Jana@Horvat.com',
-      },
-    ]);
+    let users = ref([] as { name: string; surname: string}[]);
     const dlgEditUser = ref(null);
 
     function editUser(click, item) {
-      console.log(item.item);
       dlgEditUser.value.dlgData = item.item;
       dlgEditUser.value.edit = true;
       dlgEditUser.value.show = true;
+      
     }
+
+    onMounted(async () => {
+      const {data, error} = await supabase.from('user_profile').select('*');
+      // const {data, error} = await supabase.from('user_profile, user_roles').select('name, surname').eq('user_roles.role', 'user');
+      users.value = data;
+      return data;
+    })
+
 
     return {
       show,

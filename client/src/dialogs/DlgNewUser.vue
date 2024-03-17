@@ -1,22 +1,22 @@
 <template>
   <v-dialog v-model="show" class="dlgWindow" width="40%">
-    <v-card :title="edit ? 'Uredi uporabnika' : 'Nov uporabnik'">
+    <v-card :title="edit ? 'Edit user' : 'New user'">
       <v-card-text>
         <v-row dense>
-          <v-text-field v-model="dlgData.user" label="Uporabniško ime" required></v-text-field>
+          <v-text-field v-model="dlgData.user" label="Username" required></v-text-field>
         </v-row>
         <v-row dense>
           <v-text-field
             v-model="dlgData.password"
-            label="Geslo"
+            label="Password"
             type="password"
             required></v-text-field>
         </v-row>
         <v-row dense>
-          <v-text-field v-model="dlgData.fname" label="Ime" required></v-text-field>
+          <v-text-field v-model="dlgData.name" label="First name" required></v-text-field>
         </v-row>
         <v-row dense>
-          <v-text-field v-model="dlgData.lname" label="Priimek" required></v-text-field>
+          <v-text-field v-model="dlgData.surname" label="Last name" required></v-text-field>
         </v-row>
         <v-row dense>
           <v-text-field v-model="dlgData.email" label="E-mail" required></v-text-field>
@@ -25,10 +25,10 @@
           <v-radio-group
             v-model="dlgData.rights"
             inline
-            label="Sistemske pravice:"
+            label="Sistem rights:"
             :disabled="false">
             <v-radio label="Administrator" value="admin"></v-radio>
-            <v-radio label="Uporabnik" value="user"></v-radio>
+            <v-radio label="User" value="user"></v-radio>
           </v-radio-group>
         </v-row>
       </v-card-text>
@@ -45,6 +45,7 @@
 
 <script lang="ts">
 import { defineComponent, ref } from 'vue';
+import { supabase } from '../lib/supabaseClient';
 
 export default defineComponent({
   setup() {
@@ -53,17 +54,25 @@ export default defineComponent({
     const dlgData = ref({
       user: '',
       password: '',
-      fname: '',
-      lname: '',
+      name: '',
+      surname: '',
       email: '',
       rights: 'user',
     });
 
-    function saveNewUser() {
+    const saveNewUser = async () => {
       if (edit.value) {
         console.log('edit');
       }
-      console.log(JSON.stringify(dlgData.value));
+      else {
+        console.log(JSON.stringify(dlgData.value));
+        const {data, error} = await supabase.from('user_profile').insert([{name: dlgData.value.name, surname: dlgData.value.surname}]).select();
+        if(error)
+          throw error;
+        console.log(data);
+        return data;
+      }
+
     }
 
     return {

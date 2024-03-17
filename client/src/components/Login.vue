@@ -1,20 +1,14 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { useStore } from 'vuex';
+import DlgSelectOrganization from '../dialogs/DlgSelectOrganization.vue';
 import { supabase } from '../lib/supabaseClient';
 
 const loading = ref(false);
 const email = ref('');
 const password = ref('');
 const router = useRouter();
-
-const store = useStore();
-
-// Access the session from the store
-const userRole = computed(() => store.state.userRole);
-
-console.log('user role', userRole.value);
+const showDlgSelectOrganization = ref(false);
 
 const handleLogin = async () => {
   try {
@@ -32,8 +26,16 @@ const handleLogin = async () => {
     }
   } finally {
     loading.value = false;
-    router.push('/');
+
+    // show the dialog
+    showDlgSelectOrganization.value = true;
+
+    //router.push('/');
   }
+};
+
+const showDialog = () => {
+  showDlgSelectOrganization.value = true;
 };
 </script>
 
@@ -62,4 +64,8 @@ const handleLogin = async () => {
       >
     </div>
   </form>
+  <DlgSelectOrganization
+    v-model="showDlgSelectOrganization"
+    @update:show="showDlgSelectOrganization = $event" />
+  <button @click="showDialog">Show Dialog</button>
 </template>

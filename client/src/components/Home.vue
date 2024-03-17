@@ -41,18 +41,8 @@ console.log('user role', userRole.value);
             prepend-icon="mdi-account-box">
             <v-list-title>Users</v-list-title>
           </v-list-item>
-
-          <v-btn
-            @click="
-              $refs.dlgNewUser.edit = false;
-              $refs.dlgNewUser.show = true;
-            "
-            class="dlgButton"
-            >Nov uporabnik</v-btn
-          >
-          <dlg-new-user ref="dlgNewUser"></dlg-new-user>
-          <v-btn @click="$refs.dlgUsersTbl.show = true" class="dlgButton">Uredi uporabnike</v-btn>
-          <dlg-users-tbl ref="dlgUsersTbl"></dlg-users-tbl>
+          <v-btn @click="$refs.dlgUserStory.show = true" class="dlgButton">New user story</v-btn>
+          <dlg-new-story ref="dlgUserStory"></dlg-new-story>
         </v-list>
 
         <template v-slot:append>
@@ -72,8 +62,7 @@ console.log('user role', userRole.value);
 <script lang="ts">
 import { computed } from 'vue';
 import { useStore } from 'vuex';
-import DlgNewUser from '../dialogs/DlgNewUser.vue';
-import DlgUsersTbl from '../dialogs/DlgUsersTbl.vue';
+import DlgNewStory from '../dialogs/DlgNewStory.vue';
 export default {
   data() {
     return {
