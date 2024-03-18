@@ -59,13 +59,27 @@ export default defineComponent({
       console.log('Fetching organizations');
       console.log('user', user);
 
-      const { data, error } = await supabase
-        .from('organization') // Replace 'organizations' with your actual table name
+      console.log('user', user?.data.user?.id)
+
+      const { data: orgUserData, error: orgUserError } = await supabase
+        .from('orgs_users') // Replace 'organizations' with your actual table name
         .select('*') // Fetch all columns
         .eq('user_id', user?.data.user?.id); // Only fetch organizations that belong to the current user
 
-      organizations.value = data;
-      console.log('data', data);
+      const { data: allOrgs, error: allOrgsError } = await supabase
+        .from('organization')
+        .select('*');
+
+      if (allOrgsError) throw allOrgsError;
+
+      console.log('orgUserData', orgUserData);
+      console.log('allOrgs', allOrgs);
+      const filteredOrgs = allOrgs.filter((org) =>
+        orgUserData.some((userOrg) => userOrg.org_id === org.id)
+      );
+
+      organizations.value = filteredOrgs;
+      console.log('data', orgUserData);
     };
 
     const enterOrganization = () => {
