@@ -147,6 +147,8 @@ async function createProject(this: any) {
     .from('project')
     .insert([{
       name: name.value,
+      description: description.value,
+      organization_id: localStorage.getItem('organizationId'),
     }]);
 
   if (error) {
