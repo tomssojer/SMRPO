@@ -44,8 +44,84 @@
       </v-card-actions>
     </v-card>
   </v-dialog>
+  <v-dialog v-model="isTmpProjectViewOpen" style="max-width: 500px">
+    <v-card>
+      <v-card-title class="headline">Project</v-card-title>
+    <v-card-actions>
+        <v-btn class="bg-deep-purple" @click="showSprintCreate = true" style="margin: 0 0 20px 20px">Create new sprint</v-btn>
+        <v-dialog v-model="showSprintCreate" class="dlgWindow" width="50%">
+    <v-card title="New sprint">
+      <v-card-text>
+        <!-- Edit start date, end date and name -->
+        <v-row dense>
+          <!-- row to show errors when entering things -->
+          <v-col cols="12">
+            <v-alert id="sprintError" v-if="showSprintError"
+              type="error" elevation="2" colored>
+              Start and end date must be weekdays, and not in the past.
+              Start date must be before end date.
+            </v-alert>
+            <v-alert v-if="sprintOverlap"> 
+              Overlap with existing sprint, please change dates or name.   
+            </v-alert>
+            <v-alert v-if="showSuccessMessage" type="success" >
+              Sprint created successfully!
+            </v-alert>
+                 
+         
+          </v-col>
+          <v-col cols="7">
+            <v-text-field v-model="sprintData.name" label="Name" required></v-text-field>
+          </v-col>
+          <v-divider></v-divider>
+
+          <v-col cols="4">
+            <v-text-field
+              v-model="sprintData.start_date"
+              @click="showDatePickerStart = true"
+              label="Start date"
+              prepend-icon="mdi-calendar"
+              ></v-text-field>
+              
+            <v-date-picker
+              v-model="sprintData.start_date"
+              v-if="showDatePickerStart"
+              @mouseenter="showDatePickerStart = false"
+              no-title
+              range></v-date-picker>
+          </v-col>
+          <v-divider></v-divider>
+          <v-col cols="4">
+            <v-text-field
+              v-model="sprintData.end_date"
+              @click="showDatePickerEnd = true"
+              label="Start date"
+              prepend-icon="mdi-calendar"
+              ></v-text-field>
+
+            <v-date-picker
+              v-model="sprintData.end_date"
+              v-if="showDatePickerEnd"
+              no-title
+              @mouseenter="showDatePickerEnd = false"
+              range></v-date-picker>
+          </v-col>
+        </v-row>
+      </v-card-text>
+
+      <v-divider></v-divider>
+      <v-card-actions>
+        <v-spacer></v-spacer>
+        <v-btn text="Close" variant="text" @click="showSprintCreate = false"></v-btn>
+        <v-btn text="Save" variant="text" @click="saveSprint"></v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
   <div v-if="isLoading">Loading...</div>
-  <v-data-table v-else :headers="headers" :items="items"></v-data-table>
+  <v-data-table v-else :headers="headers" :items="items" @click:row="openTmpProjectView"></v-data-table>
 </template>
 
 <script setup lang="ts">
@@ -68,11 +144,14 @@ const developers = ref([]);
 
 const isAdmin = ref(false);
 const isModalOpen = ref(false);
+const isTmpProjectViewOpen = ref(false);
 const isLoading = ref(true);
 const items = ref<any[]>([]);
 
 const selected_date = ref([]);
 const showDatePicker = ref(false);
+
+const currentProjectId = ref(0);
 
 const user_names = ref<string[]>([]);
 
@@ -89,6 +168,35 @@ const openModal = () => {
   isModalOpen.value = true;
 };
 
+const openTmpProjectView = (click, item) => {
+  console.log(item.item)
+  currentProjectId.value = item.item.id;
+  isTmpProjectViewOpen.value = true;
+  console.log('currentProjectId', currentProjectId.value);
+};
+
+const minDate = new Date().toISOString().split('T')[0];
+const showSprintError = ref(false);
+const sprintOverlap = ref(false);
+const showSuccessMessage = ref(false);
+
+const validateWeekend = (date) => {
+      const dayOfWeek = new Date(date).getDay();
+      return dayOfWeek !== 0 && dayOfWeek !== 6; // 0 = Sunday, 6 = Saturday
+};
+
+
+
+// sprint values 
+const sprintData = ref({
+  name: '',
+  start_date: ref([]),
+  end_date: ref([]),
+});
+const showSprintCreate = ref(false);
+const showDatePickerStart = ref(false);
+const showDatePickerEnd = ref(false);
+
 supabase.auth.onAuthStateChange(async (_, session) => {
   if (session) {
     const jwt = session.access_token;
@@ -100,13 +208,126 @@ supabase.auth.onAuthStateChange(async (_, session) => {
   }
 });
 
+const validateSprintDates = () => {
+  showSprintError.value = true;
+  if (!validateWeekend(sprintData.value.start_date) || !validateWeekend(sprintData.value.end_date)) {
+    showSprintError.value = true;
+    return false;
+  }
+  if (sprintData.value.start_date > sprintData.value.end_date) {
+    
+    showSprintError.value = true;
+    return false;
+  }
+  if (new Date(sprintData.value.start_date) < new Date(minDate) || new Date(sprintData.value.end_date) < new Date(minDate)) {
+        showSprintError.value = true;
+        return false;
+  }
+  showSprintError.value = false;
+  return true;
+};
+
+async function validateSprint(sprintData) {
+  const { data: projSprints, error: projSprErr } = await supabase
+    .from('sprints')
+    .select('*')
+    .eq('project_id', currentProjectId.value);
+
+    const sprintOverlap = projSprints.some(sprint => {
+    const newStartDate = new Date(sprintData.value.start_date);
+    const newEndDate = new Date(sprintData.value.end_date);
+    const existingStartDate = new Date(sprint.start_date);
+    const existingEndDate = new Date(sprint.end_date);
+
+    const isOverlapping = 
+      (existingStartDate <= newStartDate && existingEndDate >= newStartDate) ||
+      (existingStartDate <= newEndDate && existingEndDate >= newEndDate);
+    
+    const isNameDuplicate = sprint.name === sprintData.value.name;
+
+    return isOverlapping || isNameDuplicate;
+  });
+
+  return sprintOverlap;
+};
+
+const resetFormAndCloseDialog = () => {
+      sprintData.value = { name: '', 
+      startDate: ref([]), 
+      endDate: ref([]) 
+    }; // Reset form data
+      showSprintCreate.value = false; // Close dialog
+};
+
+async function saveSprint() {
+  if (!validateSprintDates()) return false;
+  const isInvalid = await validateSprint(sprintData);
+  if (isInvalid) {
+    sprintOverlap.value = true;
+    return;
+  }
+  sprintOverlap.value = false;
+
+  var duration = countWeekdays(sprintData.value.start_date, sprintData.value.end_date) * 8 / 6;
+  // round to 2 decimal places
+  duration = Math.round(duration)
+
+  // insert the new sprint into the database
+  const { data, error } = await supabase
+    .from('sprints')
+    .insert([{
+      name: sprintData.value.name,
+      start_date: sprintData.value.start_date,
+      end_date: sprintData.value.end_date,
+      project_id: currentProjectId.value,
+      duration: duration,
+    }]);
+    showSuccessMessage.value = true;
+    setTimeout(() => {
+      
+    }, 70000);
+
+    console.log(JSON.stringify(sprintData.value));
+
+    resetFormAndCloseDialog();
+  
+}
+
+const countWeekdays = (startDate, endDate) => {
+  // Parse the start and end dates from strings to Date objects
+  let start = new Date(startDate);
+  let end = new Date(endDate);
+
+  // Counter for weekdays
+  let count = 0;
+
+  // Loop over each day from start to end
+  while (start <= end) {
+    // Get the day of the week, where 0 is Sunday and 6 is Saturday
+    const dayOfWeek = start.getDay();
+
+    // Check if the day is a weekday (Monday = 1 to Friday = 5)
+    if (dayOfWeek >= 1 && dayOfWeek <= 5) {
+      count++;
+    }
+
+    // Move to the next day
+    start.setDate(start.getDate() + 1);
+  }
+
+  return count;
+}
+
+
+
+
 
 async function getProjects() {
   const organizationId = localStorage.getItem('organizationId');
   console.log('organizationId', organizationId);
   const { data, error } = await supabase
     .from('project')
-    .select('name, created_at, start_date, deadline')
+    .select('id, name, created_at, start_date, deadline')
     .eq('organization_id', organizationId);
 
   if (error) {
