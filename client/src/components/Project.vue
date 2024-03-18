@@ -1,51 +1,115 @@
 <template>
-  <v-btn class="bg-deep-purple new-project-button" theme="dark" v-if="isAdmin" @click="openModal">New project</v-btn>
-  <v-dialog v-model="isModalOpen" style="max-width: 800px">
-    <v-card>
-      <v-card-title class="headline">Create a new project</v-card-title>
-      <v-card-text>
-        <v-form>
-          <v-row dense>
-            <v-col cols="6">
-              <v-text-field v-model="name" label="Name"></v-text-field>
-            </v-col>
-            <v-col cols="6">
-              <v-text-field v-model="selected_date" label="Start date" @click="showDatePicker = true"
-                prepend-icon="mdi-calendar" readonly></v-text-field>
-              <v-date-picker v-model="selected_date" v-if="showDatePicker" no-title range></v-date-picker>
-            </v-col>
-          </v-row>
-          <v-textarea v-model="description" label="Describe this project"></v-textarea>
-          <v-row>
-            <v-col cols="12">
-              <v-select v-model="productOwner" :items="user_names" label="Product Owner"
-                :rules="[(v) => !!v || 'A product owner is required']">
-              </v-select>
-            </v-col>
-          </v-row>
-          <v-row>
-            <v-col cols="12">
-              <v-select v-model="scrumMaster" :items="user_names" item-text="name" item-value="id" label="Scrum Master"
-                :rules="[(v) => !!v || 'A scrum master is required']"></v-select>
-            </v-col>
-          </v-row>
-          <v-row>
-            <v-col cols="12">
-              <v-select v-model="developers" :items="user_names" item-text="name" item-value="id" label="Developers"
-                multiple :rules="[(v) => !!v || 'Developers are required']"></v-select>
-            </v-col>
-          </v-row>
-        </v-form>
-      </v-card-text>
-      <v-card-actions>
-        <v-btn class="bg-deep-purple" @click="createProject" style="margin: 0 0 20px 20px">Create</v-btn>
-        <v-spacer></v-spacer>
-        <v-btn @click="isModalOpen = false" style="margin: 0 20px 20px 0">Close</v-btn>
-      </v-card-actions>
-    </v-card>
-  </v-dialog>
-  <div v-if="isLoading">Loading...</div>
-  <v-data-table v-else :headers="headers" :items="items"></v-data-table>
+  <div style="height: 100vh; overflow: hidden;">
+    <div style="margin: 30px auto; max-width: 80%;">
+      <v-btn class="bg-deep-purple" theme="dark" style="margin: 30px 0;" v-if="isAdmin" @click="openModal">
+        New project
+      </v-btn>
+
+      <v-dialog v-model="isModalOpen" style="max-width: 800px;">
+        <v-card>
+          <v-card-title class="headline">Create a new project</v-card-title>
+          <v-card-text>
+            <v-form>
+              <v-row dense>
+                <v-col cols="6">
+                  <v-text-field v-model="name" label="Name"></v-text-field>
+                </v-col>
+                <v-col cols="6">
+                  <v-text-field v-model="selected_date" label="Start date" @click="showDatePicker = true"
+                    prepend-icon="mdi-calendar" readonly></v-text-field>
+                  <v-date-picker v-model="selected_date" v-if="showDatePicker" no-title range></v-date-picker>
+                </v-col>
+              </v-row>
+              <v-textarea v-model="description" label="Describe this project"></v-textarea>
+              <v-row>
+                <v-col cols="12">
+                  <v-select v-model="productOwner" :items="user_names" label="Product Owner"
+                    :rules="[(v) => !!v || 'A product owner is required']">
+                  </v-select>
+                </v-col>
+              </v-row>
+              <v-row>
+                <v-col cols="12">
+                  <v-select v-model="scrumMaster" :items="user_names" item-text="name" item-value="id"
+                    label="Scrum Master" :rules="[(v) => !!v || 'A scrum master is required']"></v-select>
+                </v-col>
+              </v-row>
+              <v-row>
+                <v-col cols="12">
+                  <v-select v-model="developers" :items="user_names" item-text="name" item-value="id" label="Developers"
+                    multiple :rules="[(v) => !!v || 'Developers are required']"></v-select>
+                </v-col>
+              </v-row>
+            </v-form>
+          </v-card-text>
+          <v-card-actions>
+            <v-btn class="bg-deep-purple" @click="createProject" style="margin: 0 0 20px 20px">Create</v-btn>
+            <v-spacer></v-spacer>
+            <v-btn @click="isModalOpen = false, showDatePicker = false" style="margin: 0 20px 20px 0">Close</v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
+
+      <v-dialog v-model="isEditModalOpen" style="max-width: 800px">
+        <v-card>
+          <v-card-title class="headline">Edit project</v-card-title>
+          <v-card-text>
+            <v-form>
+              <v-row dense>
+                <v-col cols="6">
+                  <v-text-field v-model="selectedProject.name" label="Name"></v-text-field>
+                </v-col>
+                <v-col cols="6">
+                  <v-text-field v-model="selectedProject.selected_date" label="Start date"
+                    @click="showDatePicker = true" prepend-icon="mdi-calendar" readonly></v-text-field>
+                  <v-date-picker v-model="selectedProject.value.selected_date" v-if="showDatePicker" no-title
+                    range></v-date-picker>
+                </v-col>
+              </v-row>
+              <v-textarea v-model="selectedProject.value.description" label="Describe this project"></v-textarea>
+              <v-row>
+                <v-col cols="12">
+                  <v-select v-model="selectedProject.productOwner" :items="user_names" label="Product Owner"
+                    :rules="[(v) => !!v || 'A product owner is required']">
+                  </v-select>
+                </v-col>
+              </v-row>
+              <v-row>
+                <v-col cols="12">
+                  <v-select v-model="selectedProject.scrumMaster" :items="user_names" item-text="name"
+                    item-value="id" label="Scrum Master"
+                    :rules="[(v) => !!v || 'A scrum master is required']"></v-select>
+                </v-col>
+              </v-row>
+              <v-row>
+                <v-col cols="12">
+                  <v-select v-model="selectedProject.developers" :items="user_names" item-text="name"
+                    item-value="id" label="Developers" multiple
+                    :rules="[(v) => !!v || 'Developers are required']"></v-select>
+                </v-col>
+              </v-row>
+            </v-form>
+          </v-card-text>
+          <v-card-actions>
+            <v-btn class="bg-deep-purple" @click="createProject" style="margin: 0 0 20px 20px">Create</v-btn>
+            <v-spacer></v-spacer>
+            <v-btn @click="isModalOpen = false, showDatePicker = false" style="margin: 0 20px 20px 0">Close</v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
+
+      <div v-if="isLoading">Loading...</div>
+
+      <v-data-table style="margin: auto;" v-else
+        :headers="headers" :items="items">
+        <template v-slot:item.action="{ item }">
+          <v-btn class="bg-deep-purple" size="30" @click="openEditModal(item)">
+            <v-icon size="medium20">mdi-pencil</v-icon>
+          </v-btn>
+        </template>
+      </v-data-table>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -83,10 +147,35 @@ const headers = ref([
   { title: 'Created at', key: 'created_at' },
   { title: 'Start date', key: 'start_date' },
   { title: 'Deadline', key: 'deadline' },
+  { title: '', key: 'action', sortable: false},
 ]);
+
+const selectedProject = ref({
+  name: '',
+  description: '',
+  selected_date: [],
+  productOwner: '',
+  scrumMaster: '',
+  developers: [],
+});
+const isEditModalOpen = ref(false);
+
+const openEditModal = (project: any) => {
+  console.log("Here")
+  if (project) {
+    console.log(project)
+    selectedProject.value = Object.assign({}, project);
+    console.log(selectedProject.value.name)
+    isEditModalOpen.value = true;
+    // showDatePicker.value = false;
+  } else {
+    console.log("Error opening edit modal")
+  }
+};
 
 const openModal = () => {
   isModalOpen.value = true;
+  showDatePicker.value = false;
 };
 
 supabase.auth.onAuthStateChange(async (_, session) => {
@@ -184,4 +273,3 @@ watchEffect(() => {
   isFormValid.value = validateForm([name.value, productOwner.value, scrumMaster.value, developers.value]);
 });
 </script>
-
