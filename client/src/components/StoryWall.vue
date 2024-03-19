@@ -15,10 +15,10 @@
         >
           <v-card @click="editStory(item)">
             <v-card-title class="d-flex align-center">
-              <h4>{{ item.raw.title + " (" + item.raw.prio + ") "}} </h4>
+              <h4 style="text-align:left;" class="card-title">{{ item.raw.name + " (" + item.raw.priority + ") "}} </h4>
             </v-card-title>
             <v-card-text>
-              {{ item.raw.descr }}
+              {{ item.raw.description }}
             </v-card-text>
           </v-card>
         </v-col>
@@ -41,37 +41,7 @@ export default defineComponent({
   setup() {
     const show = ref(false);
     const search = ref('');
-    const stories = ref([ //temp data
-      {
-        title: "Story 1",
-        prio: "Must have",
-        descr: "Namesto opisa zgodbe so lahko tukaj prikazane podnaloge in časovna zahtevnost",
-        bValue: "10"
-      },
-      {
-        title: "Story 2",
-        prio: "Should have",
-        descr: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.",
-        bValue: "5"
-      },
-      {
-        title: "Story 3",
-        prio: "Could have",
-        descr: "Basic description",
-        bValue: "3"
-      },
-      {
-        title: "Story 4",
-        prio: "Could have",
-        descr: "Basic description",
-        bValue: "3"
-      },
-      {
-        title: "Story 5",
-        prio: "Could have",
-        descr: "Basic description",
-        bValue: "3"
-      }]);
+    const stories = ref([]);
     // const stories = ref([] as { name: string; surname: string}[]);
 
     // onMounted(async () => {
@@ -82,13 +52,38 @@ export default defineComponent({
     // })
     const dlgNewStory = ref(null);
     const dlgEditStory = ref(null);
+    const currentProjectId = ref(1);
+
+    onMounted(() => {
+        fetchStories();
+      });
+    
+    async function fetchStories() {
+      const {data, error} = await supabase
+        .from('user_story')
+        .select('id, sprints(id, name), project_id, name, description, state, priority, work_value, time')
+        .eq('project_id', currentProjectId.value);
+      if (error) {
+        console.error('Error fetching stories', error);
+      } else {
+        data.forEach((story: any) => {
+          if(story.sprints == null)
+            story.sprints = {name: ''};
+          stories.value.push(story);
+        });
+        console.log("STORIES");
+        console.log(stories.value);
+        console.log(stories.value[0].sprints.name);
+      }
+      stories.value = data;
+    }
 
     function newStory() {
       dlgNewStory.value.edit = false;
       dlgNewStory.value.show = true;
       
     }
-    function editStory(item) {
+    function editStory(item: any) {
       console.log(item)
       dlgEditStory.value.dlgData = item.raw;
       dlgEditStory.value.edit = true;
@@ -108,3 +103,13 @@ export default defineComponent({
   },
 });
 </script>
+
+<style scoped>
+.card-title {
+  max-width: 100%;
+  height: auto;
+  min-height: 32px;
+  white-space: pre-wrap;
+}
+
+</style>
