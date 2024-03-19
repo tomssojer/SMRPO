@@ -1,6 +1,5 @@
 const formatDateTime = (date: string): string => {
   const datetime = new Date(date);
-  console.log(date)
   // Format the date in "DD-MM-YYYY" format 
   const formattedDate = datetime.toLocaleDateString('en-GB', {
     day: '2-digit',
@@ -16,14 +15,11 @@ const formatDateTime = (date: string): string => {
 
   // Combine date and time into the desired format
   const formattedDateTime = `${formattedDate} at ${formattedTime}`;
-  console.log(formattedDateTime);
   return formattedDateTime;
 }
 
 const formatDate = (date: string): string => {
   const datetime = new Date(date);
-  console.log(date)
-  // Format the date in "DD-MM-YYYY" format 
   const formattedDate = datetime.toLocaleDateString('en-GB', {
     day: '2-digit',
     month: '2-digit',
