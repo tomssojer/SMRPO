@@ -47,76 +47,75 @@
   <v-dialog v-model="isTmpProjectViewOpen" style="max-width: 500px">
     <v-card>
       <v-card-title class="headline">Project</v-card-title>
-    <v-card-actions>
-        <v-btn class="bg-deep-purple" @click="showSprintCreate = true" style="margin: 0 0 20px 20px">Create new sprint</v-btn>
-        <v-dialog v-model="showSprintCreate" class="dlgWindow" width="50%">
-    <v-card title="New sprint">
-      <v-card-text>
-        <!-- Edit start date, end date and name -->
-        <v-row dense>
-          <!-- row to show errors when entering things -->
-          <v-col cols="12">
-            <v-alert id="sprintError" v-if="showSprintError"
-              type="error" elevation="2" colored>
-              Start and end date must be weekdays, and not in the past.
-              Start date must be before end date.
-            </v-alert>
-            <v-alert v-if="sprintOverlap"> 
-              Overlap with existing sprint, please change dates or name.   
-            </v-alert>
-            <v-alert v-if="showSuccessMessage" type="success" >
-              Sprint created successfully!
-            </v-alert>
-                 
-         
-          </v-col>
-          <v-col cols="7">
-            <v-text-field v-model="sprintData.name" label="Name" required></v-text-field>
-          </v-col>
-          <v-divider></v-divider>
-
-          <v-col cols="4">
-            <v-text-field
-              v-model="sprintData.start_date"
-              @click="showDatePickerStart = true"
-              label="Start date"
-              prepend-icon="mdi-calendar"
-              ></v-text-field>
-              
-            <v-date-picker
-              v-model="sprintData.start_date"
-              v-if="showDatePickerStart"
-              @mouseenter="showDatePickerStart = false"
-              no-title
-              range></v-date-picker>
-          </v-col>
-          <v-divider></v-divider>
-          <v-col cols="4">
-            <v-text-field
-              v-model="sprintData.end_date"
-              @click="showDatePickerEnd = true"
-              label="Start date"
-              prepend-icon="mdi-calendar"
-              ></v-text-field>
-
-            <v-date-picker
-              v-model="sprintData.end_date"
-              v-if="showDatePickerEnd"
-              no-title
-              @mouseenter="showDatePickerEnd = false"
-              range></v-date-picker>
-          </v-col>
-        </v-row>
-      </v-card-text>
-
-      <v-divider></v-divider>
       <v-card-actions>
-        <v-spacer></v-spacer>
-        <v-btn text="Close" variant="text" @click="showSprintCreate = false"></v-btn>
-        <v-btn text="Save" variant="text" @click="saveSprint"></v-btn>
-      </v-card-actions>
-    </v-card>
-  </v-dialog>
+        <v-btn class="bg-deep-purple" @click="showSprintCreate = true" style="margin: 0 0 20px 20px">Create new
+          sprint</v-btn>
+        <v-dialog v-model="showSprintCreate" class="dlgWindow" width="50%">
+          <v-card title="New sprint">
+            <v-card-text>
+              <!-- Edit start date, end date and name -->
+              <v-row dense>
+                <!-- row to show errors when entering things -->
+                <v-col cols="12">
+                  <v-alert id="sprintError" v-if="showSprintError" type="error" elevation="2" colored>
+                    Start and end date must be weekdays, and not in the past.
+                    Start date must be before end date.
+                  </v-alert>
+                  <v-alert v-if="sprintOverlap">
+                    Overlap with existing sprint, please change dates or name.
+                  </v-alert>
+                  <v-alert v-if="showSuccessMessage" type="success">
+                    Sprint created successfully!
+                  </v-alert>
+
+
+                </v-col>
+                <v-col cols="7">
+                  <v-text-field v-model="sprintData.name" label="Name" required></v-text-field>
+                </v-col>
+                <v-divider></v-divider>
+
+                <v-col cols="4">
+                  <v-menu v-model="showDatePickerStart" :close-on-content-click="false" :nudge-right="40"
+                    transition="scale-transition" offset-y min-width="290px">
+                    <template v-slot:activator="{ on, attrs }">
+                    <v-text-field v-model="sprintData.start_date" @click="showDatePickerStart = true" label="Start date"
+                      prepend-icon="mdi-calendar" v-bind="attrs"
+                        v-on="on"></v-text-field>
+
+                    <v-date-picker v-model="sprintData.start_date" @input="showDatePickerStart = false"
+                      v-if="showDatePickerStart" no-title>
+                      <v-spacer></v-spacer>
+
+                    </v-date-picker>
+                  </template>
+                  </v-menu>
+                </v-col>
+                <!-- <v-divider></v-divider> -->
+                <v-col cols="4" >
+                  <v-menu v-model="showDatePickerEnd" :close-on-content-click="false" :nudge-right="40"
+                    transition="scale-transition" offset-y min-width="290px">
+                    <template v-slot:activator="{ on, attrs }">
+                  <v-text-field v-model="sprintData.end_date" @click="showDatePickerEnd = true" label="End date"
+                    prepend-icon="mdi-calendar" v-bind="attrs"
+                        v-on="on"></v-text-field>
+
+                  <v-date-picker v-model="sprintData.end_date" v-if="showDatePickerEnd" no-title
+                     ></v-date-picker>
+                  </template>
+                  </v-menu>
+                </v-col>
+              </v-row>
+            </v-card-text>
+
+            <v-divider></v-divider>
+            <v-card-actions>
+              <v-spacer></v-spacer>
+              <v-btn text="Close" variant="text" @click="showSprintCreate = false"></v-btn>
+              <v-btn text="Save" variant="text" @click="saveSprint"></v-btn>
+            </v-card-actions>
+          </v-card>
+        </v-dialog>
       </v-card-actions>
     </v-card>
   </v-dialog>
@@ -181,8 +180,8 @@ const sprintOverlap = ref(false);
 const showSuccessMessage = ref(false);
 
 const validateWeekend = (date) => {
-      const dayOfWeek = new Date(date).getDay();
-      return dayOfWeek !== 0 && dayOfWeek !== 6; // 0 = Sunday, 6 = Saturday
+  const dayOfWeek = new Date(date).getDay();
+  return dayOfWeek !== 0 && dayOfWeek !== 6; // 0 = Sunday, 6 = Saturday
 };
 
 
@@ -215,13 +214,13 @@ const validateSprintDates = () => {
     return false;
   }
   if (sprintData.value.start_date > sprintData.value.end_date) {
-    
+
     showSprintError.value = true;
     return false;
   }
   if (new Date(sprintData.value.start_date) < new Date(minDate) || new Date(sprintData.value.end_date) < new Date(minDate)) {
-        showSprintError.value = true;
-        return false;
+    showSprintError.value = true;
+    return false;
   }
   showSprintError.value = false;
   return true;
@@ -233,16 +232,16 @@ async function validateSprint(sprintData) {
     .select('*')
     .eq('project_id', currentProjectId.value);
 
-    const sprintOverlap = projSprints.some(sprint => {
+  const sprintOverlap = projSprints.some(sprint => {
     const newStartDate = new Date(sprintData.value.start_date);
     const newEndDate = new Date(sprintData.value.end_date);
     const existingStartDate = new Date(sprint.start_date);
     const existingEndDate = new Date(sprint.end_date);
 
-    const isOverlapping = 
+    const isOverlapping =
       (existingStartDate <= newStartDate && existingEndDate >= newStartDate) ||
       (existingStartDate <= newEndDate && existingEndDate >= newEndDate);
-    
+
     const isNameDuplicate = sprint.name === sprintData.value.name;
 
     return isOverlapping || isNameDuplicate;
@@ -252,14 +251,21 @@ async function validateSprint(sprintData) {
 };
 
 const resetFormAndCloseDialog = () => {
-      sprintData.value = { name: '', 
-      startDate: ref([]), 
-      endDate: ref([]) 
-    }; // Reset form data
-      showSprintCreate.value = false; // Close dialog
+  sprintData.value = {
+    name: '',
+    startDate: ref([]),
+    endDate: ref([])
+  }; // Reset form data
+  showSprintCreate.value = false; // Close dialog
 };
 
 async function saveSprint() {
+  // make sure sprintdata isn't empty 
+  if (sprintData.value.name === '' || sprintData.value.start_date.length === 0 || sprintData.value.end_date.length === 0) {
+    // showSprintError.value = true;
+    return;
+  }
+
   if (!validateSprintDates()) return false;
   const isInvalid = await validateSprint(sprintData);
   if (isInvalid) {
@@ -269,7 +275,7 @@ async function saveSprint() {
   sprintOverlap.value = false;
 
   var duration = countWeekdays(sprintData.value.start_date, sprintData.value.end_date) * 8 / 6;
-  // round to 2 decimal places
+  // round to int
   duration = Math.round(duration)
 
   // insert the new sprint into the database
@@ -282,15 +288,16 @@ async function saveSprint() {
       project_id: currentProjectId.value,
       duration: duration,
     }]);
-    showSuccessMessage.value = true;
-    setTimeout(() => {
-      
-    }, 70000);
-
-    console.log(JSON.stringify(sprintData.value));
-
+  showSuccessMessage.value = true;
+  setTimeout(() => {
     resetFormAndCloseDialog();
+    showSuccessMessage.value = false;
+  }, 3000);
+
+  console.log(JSON.stringify(sprintData.value));
+
   
+
 }
 
 const countWeekdays = (startDate, endDate) => {
@@ -405,4 +412,3 @@ watchEffect(() => {
   isFormValid.value = validateForm([name.value, productOwner.value, scrumMaster.value, developers.value]);
 });
 </script>
-
