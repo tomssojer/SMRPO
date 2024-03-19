@@ -4,6 +4,9 @@ import { supabase } from '../lib/supabaseClient';
 import Organization from './Organization.vue';
 import Project from './Project.vue';
 import User from './User.vue';
+import StoryWall from './StoryWall.vue';
+import Sprint from './Sprint.vue';
+
 
 defineProps<{ msg: string }>();
 
@@ -41,6 +44,16 @@ console.log('user role', userRole.value);
             prepend-icon="mdi-account-box">
             <v-list-title>Users</v-list-title>
           </v-list-item>
+          <v-list-item
+            @click="selected = StoryWall"
+            prepend-icon="mdi-pencil">
+            <v-list-title>User stories (temporary)</v-list-title>
+          </v-list-item>
+          <v-list-item
+            @click="selected = Sprint"
+            prepend-icon="mdi-clock-fast">
+          <v-list-title>Sprints</v-list-title>
+          </v-list-item>
           <v-btn @click="$refs.dlgUserStory.show = true" class="dlgButton">New user story</v-btn>
           <dlg-new-story ref="dlgUserStory"></dlg-new-story>
         </v-list>
@@ -62,7 +75,6 @@ console.log('user role', userRole.value);
 <script lang="ts">
 import { computed } from 'vue';
 import { useStore } from 'vuex';
-import DlgNewStory from '../dialogs/DlgNewStory.vue';
 export default {
   data() {
     return {
