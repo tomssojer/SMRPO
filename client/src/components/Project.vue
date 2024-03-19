@@ -9,35 +9,30 @@
         <v-card>
           <v-card-title class="headline">Create a new project</v-card-title>
           <v-card-text>
-            <v-form>
+            <v-form ref="createForm">
               <v-row dense>
-                <v-col cols="6">
-                  <v-text-field v-model="name" label="Name"></v-text-field>
-                </v-col>
-                <v-col cols="6">
-                  <v-text-field v-model="selected_date" label="Start date" @click="showDatePicker = true"
-                    prepend-icon="mdi-calendar" readonly></v-text-field>
-                  <v-date-picker v-model="selected_date" v-if="showDatePicker" no-title range></v-date-picker>
+                <v-col cols="12">
+                  <v-text-field v-model="name" label="Name" :rules="checkEmpty('Name')"></v-text-field>
                 </v-col>
               </v-row>
-              <v-textarea v-model="description" label="Describe this project"></v-textarea>
+              <v-textarea v-model="description" label="Describe this project" :rules="checkEmpty('Description')"></v-textarea>
               <v-row>
                 <v-col cols="12">
                   <v-select v-model="productOwner" :items="user_names" label="Product Owner"
-                    :rules="[(v) => !!v || 'A product owner is required']">
+                  :rules="checkEmpty('Product Owner')">
                   </v-select>
                 </v-col>
               </v-row>
               <v-row>
                 <v-col cols="12">
                   <v-select v-model="scrumMaster" :items="user_names" item-text="name" item-value="id"
-                    label="Scrum Master" :rules="[(v) => !!v || 'A scrum master is required']"></v-select>
+                    label="Scrum Master" :rules="checkEmpty('Scrum Master')"></v-select>
                 </v-col>
               </v-row>
               <v-row>
                 <v-col cols="12">
                   <v-select v-model="developers" :items="user_names" item-text="name" item-value="id" label="Developers"
-                    multiple :rules="[(v) => !!v || 'Developers are required']"></v-select>
+                    multiple :rules="checkEmpty('Developers', true)"></v-select>
                 </v-col>
               </v-row>
             </v-form>
@@ -54,44 +49,36 @@
         <v-card>
           <v-card-title class="headline">Edit project</v-card-title>
           <v-card-text>
-            <v-form>
+            <v-form ref="updateForm">
               <v-row dense>
-                <v-col cols="6">
-                  <v-text-field v-model="selectedProject.name" label="Name"></v-text-field>
-                </v-col>
-                <v-col cols="6">
-                  <v-text-field v-model="selectedProject.selected_date" label="Start date"
-                    @click="showDatePicker = true" prepend-icon="mdi-calendar" readonly></v-text-field>
-                  <v-date-picker v-model="selectedProject.value.selected_date" v-if="showDatePicker" no-title
-                    range></v-date-picker>
+                <v-col cols="12">
+                  <v-text-field v-model="selectedProject.name" :rules="checkEmpty('Name')" label="Name"></v-text-field>
                 </v-col>
               </v-row>
-              <v-textarea v-model="selectedProject.value.description" label="Describe this project"></v-textarea>
+              <v-textarea v-model="selectedProject.description" :rules="checkEmpty('Description')" label="Describe this project"></v-textarea>
               <v-row>
                 <v-col cols="12">
                   <v-select v-model="selectedProject.productOwner" :items="user_names" label="Product Owner"
-                    :rules="[(v) => !!v || 'A product owner is required']">
+                  :rules="checkEmpty('Product Owner')">
                   </v-select>
                 </v-col>
               </v-row>
               <v-row>
                 <v-col cols="12">
-                  <v-select v-model="selectedProject.scrumMaster" :items="user_names" item-text="name"
-                    item-value="id" label="Scrum Master"
-                    :rules="[(v) => !!v || 'A scrum master is required']"></v-select>
+                  <v-select v-model="selectedProject.scrumMaster" :items="user_names" item-text="name" item-value="id"
+                    label="Scrum Master" :rules="checkEmpty('Scrum Master')"></v-select>
                 </v-col>
               </v-row>
               <v-row>
                 <v-col cols="12">
-                  <v-select v-model="selectedProject.developers" :items="user_names" item-text="name"
-                    item-value="id" label="Developers" multiple
-                    :rules="[(v) => !!v || 'Developers are required']"></v-select>
+                  <v-select v-model="selectedProject.developers" :items="user_names" item-text="name" item-value="id"
+                    label="Developers" multiple :rules="checkEmpty('Developers', true)"></v-select>
                 </v-col>
               </v-row>
             </v-form>
           </v-card-text>
           <v-card-actions>
-            <v-btn class="bg-deep-purple" @click="createProject" style="margin: 0 0 20px 20px">Create</v-btn>
+            <v-btn class="bg-deep-purple" @click="updateProject" style="margin: 0 0 20px 20px">Update</v-btn>
             <v-spacer></v-spacer>
             <v-btn @click="isModalOpen = false, showDatePicker = false" style="margin: 0 20px 20px 0">Close</v-btn>
           </v-card-actions>
@@ -99,14 +86,19 @@
       </v-dialog>
 
       <div v-if="isLoading">Loading...</div>
-
-      <v-data-table style="margin: auto;" v-else
-        :headers="headers" :items="items">
+      <v-data-table style="margin: auto;" v-else :headers="headers" :items="items" show-expand>
         <template v-slot:item.action="{ item }">
           <v-btn class="bg-deep-purple" size="30" @click="openEditModal(item)">
             <v-icon size="medium20">mdi-pencil</v-icon>
           </v-btn>
         </template>
+        <template v-slot:expanded-row="{ columns, item }">
+      <tr>
+        <td :colspan="columns.length">
+          Description: {{ item.description }}
+        </td>
+      </tr>
+    </template>
       </v-data-table>
     </div>
   </div>
@@ -114,8 +106,9 @@
 
 <script setup lang="ts">
 import { supabase } from "../lib/supabaseClient";
-import { onMounted, ref, watchEffect } from 'vue';
+import { onMounted, ref } from 'vue';
 import { formatDate, formatDateTime } from '../lib/dateFormatter';
+import { de } from "vuetify/locale";
 
 onMounted(() => {
   getProjects();
@@ -135,43 +128,78 @@ const isModalOpen = ref(false);
 const isLoading = ref(true);
 const items = ref<any[]>([]);
 
-const selected_date = ref([]);
 const showDatePicker = ref(false);
 
 const user_names = ref<string[]>([]);
 
-const isFormValid = ref(false);
+const createForm = ref(null);
+const updateForm = ref(null);
+
+
+const checkEmpty = (field, isMultiple = false) => {
+  return isMultiple
+    ? [(v) => (v && v.length > 0) || `${field} are required`]
+    : [(v) => !!v || `${field} is required`];
+};
 
 const headers = ref([
   { title: 'Name', key: 'name' },
+  {title: 'Project id', key: 'id'},
   { title: 'Created at', key: 'created_at' },
-  { title: 'Start date', key: 'start_date' },
-  { title: 'Deadline', key: 'deadline' },
-  { title: '', key: 'action', sortable: false},
+  { title: '', key: 'action', sortable: false },
 ]);
 
 const selectedProject = ref({
   name: '',
   description: '',
-  selected_date: [],
   productOwner: '',
   scrumMaster: '',
   developers: [],
 });
 const isEditModalOpen = ref(false);
 
-const openEditModal = (project: any) => {
-  console.log("Here")
+async function openEditModal(project: any) {
   if (project) {
-    console.log(project)
+    project.developers = [];
+
+    await supabase
+      .from('project_role')
+      .select('user_id, role')
+      .eq('project_id', project.id)
+      .then(async ({ data, error }) => {
+        if (error) {
+          console.error('Error fetching project roles');
+        } else {
+          for (const role of data) {
+            const user = (await supabase.auth.getUser()).data.user;
+            const userId = user?.id;
+
+            const username = await supabase
+              .from('user_profile')
+              .select('name, surname')
+              .eq('user_id', userId)
+              .single();
+
+            if (username.data) {
+              if (role.role === 'product_owner') {
+                project.productOwner = username.data.name + " " + username.data.surname;
+              } else if (role.role === 'scrum_master') {
+                project.scrumMaster = username.data.name + " " + username.data.surname;
+              } else if (role.role === 'developer') {
+                project.developers = project.developers || [];
+                project.developers.push(username.data.name + " " + username.data.surname);
+              }
+            }
+          }
+        }
+      });
     selectedProject.value = Object.assign({}, project);
-    console.log(selectedProject.value.name)
     isEditModalOpen.value = true;
-    // showDatePicker.value = false;
+    showDatePicker.value = false;
   } else {
     console.log("Error opening edit modal")
   }
-};
+}
 
 const openModal = () => {
   isModalOpen.value = true;
@@ -192,10 +220,9 @@ supabase.auth.onAuthStateChange(async (_, session) => {
 
 async function getProjects() {
   const organizationId = localStorage.getItem('organizationId');
-  console.log('organizationId', organizationId);
   const { data, error } = await supabase
     .from('project')
-    .select('name, created_at, start_date, deadline')
+    .select('*')
     .eq('organization_id', organizationId);
 
   if (error) {
@@ -221,16 +248,16 @@ async function getUsers() {
   if (error) {
     console.error("Error fetching users")
   } else {
-    console.log(data)
     users.value = data;
-
     data.forEach((element: { name: string, surname: string }) =>
       user_names.value.push(element.name + " " + element.surname));
   }
 }
 
 async function createProject(this: any) {
-  if (!isFormValid.value) return;
+  createForm.value.validate();
+  const isFormValid = validateForm([name.value, productOwner.value, scrumMaster.value, developers.value]);
+  if (!isFormValid) return;
 
   const { data, error } = await supabase
     .from('project')
@@ -246,13 +273,33 @@ async function createProject(this: any) {
     getProjects();
     isModalOpen.value = false;
     const projectId = data[0].id;
+    
+    const po = await supabase
+      .from('user_profile')
+      .select('user_id')
+      .eq('name', productOwner.value.split(' ')[0])
+      .eq('surname', productOwner.value.split(' ')[1])
+      .single();
+
+    const sm = await supabase
+      .from('user_profile')
+      .select('user_id')
+      .eq('name', scrumMaster.value.split(' ')[0])
+      .eq('surname', scrumMaster.value.split(' ')[1])
+      .single();
+
+    const devs = await supabase
+      .from('user_profile')
+      .select('user_id')
+      .in('name', developers.value.map((name: string) => name.split(' ')[0]))
+      .in('surname', developers.value.map((name: string) => name.split(' ')[1]));
 
     await supabase
       .from('project_role')
       .insert([
-        { project_id: projectId, user_id: productOwner.value, role: 'product_owner' },
-        { project_id: projectId, user_id: scrumMaster.value, role: 'scrum_master' },
-        ...developers.value.map((id: number) => ({ project_id: projectId, user_id: id, role: 'developer' }))
+        { project_id: projectId, user_id: po.data?.user_id, role: 'product_owner' },
+        { project_id: projectId, user_id: sm.data?.user_id, role: 'scrum_master' },
+        ...devs.data?.map((item: { user_id: any }) => ({ project_id: projectId, user_id: item.user_id, role: 'developer' })) || []
       ]);
 
     if (error) {
@@ -264,12 +311,39 @@ async function createProject(this: any) {
   }
 }
 
+async function updateProject() {
+  updateForm.value.validate();
+  const isFormValid = validateForm([selectedProject.value.name, selectedProject.value.productOwner, selectedProject.value.scrumMaster, selectedProject.value.developers]);
+  if (!isFormValid) return;
 
-const validateForm = (formItems: any) => {
-  return formItems.every((item: any) => !!item);
+  const { error } = await supabase
+    .from('project')
+    .update({name: selectedProject.value.name})
+    .eq('id', selectedProject.value.id);
+
+  if (error) {
+    console.error("Error updating project")
+  } else {
+    await supabase
+      .from('project_role')
+      .delete()
+      .eq('project_id', selectedProject.value.id);
+
+    await supabase
+      .from('project_role')
+      .insert([
+        { project_id: selectedProject.value.id, user_id: selectedProject.value.productOwner, role: 'product_owner' },
+        // { project_id: selectedProject.value.id, user_id: selectedProject.value.scrumMaster, role: 'scrum_master' },
+        // ...selectedProject.value.developers.map((id: number) => ({ project_id: selectedProject.value.id, user_id: id, role: 'developer' }))
+      ]);
+      getProjects();
+      isEditModalOpen.value = false;
+    }
 }
 
-watchEffect(() => {
-  isFormValid.value = validateForm([name.value, productOwner.value, scrumMaster.value, developers.value]);
-});
+
+const validateForm = (formItems: any[]) => {
+  console.log(formItems)
+  return formItems.every((item: any) => !!item);
+}
 </script>
