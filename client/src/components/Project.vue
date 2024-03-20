@@ -645,10 +645,6 @@ const validateForm = (formItems: any[]) => {
   }
   let duplicateName = false;
   items.value.forEach((item: any) => {
-    console.log(item.name.toLowerCase(), formItems[0].toLowerCase())
-    console.log(item.name.toLowerCase() === formItems[0].toLowerCase())
-    console.log(item.id !== selectedProject.value.id)
-    console.log(item.id, selectedProject.value.id)
     if (item.name.toLowerCase() === formItems[0].toLowerCase() && item.id !== selectedProject.value.id) {
       console.log('should return false');
       duplicateName = true;

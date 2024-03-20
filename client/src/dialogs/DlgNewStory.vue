@@ -107,7 +107,15 @@
           return;
         if (edit.value) {
           console.log('edit');
-          console.log(dlgData.value);
+         // console.log(dlgData.value);
+          if (dlgData.value.state === 'finished') {
+            return;
+          }
+          if (dlgData.value.sprint !== null) {
+            if (dlgData.value.time === null){
+              return;
+            }
+          }
           const {data, error} = await supabase
             .from('user_story')
             .update([{
