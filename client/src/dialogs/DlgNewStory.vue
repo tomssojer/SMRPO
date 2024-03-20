@@ -59,7 +59,15 @@
       const show = ref(false);
       const edit = ref(false);
       const prio = ref(['Must have', 'Should have', 'Could have', 'Won\'t have this time']);
-      const dlgData = ref<any>({});
+      const dlgData = ref<any>({
+        name: '',
+        priority: '',
+        description: '',
+        sprints: {id: null, name: ''},
+        work_value: null,
+        time: null,
+        id: 0
+      });
       const checkEmpty = [(value: string) => !!value || 'This field is required'];
       const sprints = ref<any[]>([]);
 
