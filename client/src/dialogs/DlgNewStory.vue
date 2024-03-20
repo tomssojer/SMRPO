@@ -34,7 +34,7 @@
               <v-text-field v-model="dlgData.time" label="Time cost"></v-text-field>
             </v-col>
             <v-col cols="3">
-              <v-select v-model="dlgData.sprints.id" label="Sprint" :items="sprints" item-value="id" item-title="name"></v-select>
+              <v-select v-model="dlgData.sprint_id" label="Sprint" :items="sprints" item-value="id" item-title="name"></v-select>
             </v-col>
           </v-row>
           
@@ -59,7 +59,15 @@
       const show = ref(false);
       const edit = ref(false);
       const prio = ref(['Must have', 'Should have', 'Could have', 'Won\'t have this time']);
-      const dlgData = ref(null);
+      const dlgData = ref<any>({
+        name: '',
+        priority: '',
+        description: '',
+        sprints: {id: null, name: ''},
+        work_value: null,
+        time: null,
+        id: 0
+      });
       const checkEmpty = [(value: string) => !!value || 'This field is required'];
       const sprints = ref<any[]>([]);
 
@@ -98,7 +106,7 @@
           const {data, error} = await supabase
             .from('user_story')
             .update([{
-              sprint_id: dlgData.value.sprints.id,
+              sprint_id: dlgData.value.sprint_id,
               name: dlgData.value.name, 
               description: dlgData.value.description,
               project_id: currentProjectId.value,
@@ -140,7 +148,10 @@
           .select('id, name')
           .eq('name', dlgData.value.name)
           .neq('id', dlgData.value.id);
-        return data.length != 0; 
+        if(error)
+          return true;
+        else
+          return data.length != 0; 
       }
   
       return {
