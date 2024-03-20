@@ -163,7 +163,7 @@
       <div v-if="isLoading">Loading...</div>
       <v-data-table style="margin: auto;" v-else :headers="headers" :items="items" show-expand>
         <template v-slot:item.action="{ item }">
-          <v-btn class="bg-deep-purple" size="30" @click="openEditModal(item)">
+          <v-btn v-if="canEdit" class="bg-deep-purple" size="30" @click="openEditModal(item)">
             <v-icon size="medium20">mdi-pencil</v-icon>
           </v-btn>
         </template>
@@ -200,6 +200,7 @@ const developers = ref([]);
 
 const isAdmin = ref(false);
 const isModalOpen = ref(false);
+const canEdit = ref(false);
 
 const isLoading = ref(true);
 const items = ref<any[]>([]);
@@ -300,7 +301,6 @@ async function openEditModal(project: any) {
       selectedProject.value = Object.assign({}, updatedProject);
       isEditModalOpen.value = true;
       showDatePicker.value = false;
-      console.log(selectedProject.value);
     }
   } else {
     console.log("Error opening edit modal");
@@ -434,9 +434,6 @@ async function saveSprint() {
   }, 3000);
 
   console.log(JSON.stringify(sprintData.value));
-
-
-
 }
 
 const countWeekdays = (startDate, endDate) => {
@@ -464,6 +461,19 @@ const countWeekdays = (startDate, endDate) => {
   return count;
 }
 
+async function checkScrumMaster(userId: any) {
+  const {data, error} = await supabase
+    .from('project_role')
+    .select('role')
+    .eq('user_id', userId)
+    .eq('role', 'scrum_master');
+
+  if (error) {
+    console.error('Error fetching project roles');
+  } else {
+    return data.length > 0;
+  }
+}
 
 async function getProjects() {
   const organizationId = localStorage.getItem('organizationId');
@@ -479,13 +489,13 @@ async function getProjects() {
     items.value.forEach((item: any) => {
       item.created_at = formatDateTime(item.created_at);
     });
-    items.value.forEach((item: any) => {
-      item.start_date = formatDate(item.start_date);
-      item.deadline = formatDate(item.deadline);
-    });
 
     isLoading.value = false;
   }
+
+  const userId = await (await supabase.auth.getUser()).data.user?.id;
+  const isScrumMaster = await checkScrumMaster(userId);
+  canEdit.value = isAdmin.value || isScrumMaster;
 }
 
 async function getUsers() {
