@@ -72,13 +72,23 @@
 <script setup lang="ts">
 import { supabase } from "../lib/supabaseClient";
 import { onMounted, ref, watchEffect } from 'vue';
-import { formatDate, formatDateTime } from '../lib/dateFormatter';
+import { formatDateTime } from '../lib/dateFormatter';
+import { watch } from "vue";
 
 onMounted(() => {
   fetchSprints();
+  
 });
 
+
+
+
 const isAdmin = ref(false);
+const canEdit = ref(false);
+const isScrumMaster = ref(false);
+
+
+
 
 supabase.auth.onAuthStateChange(async (_, session) => {
   if (session) {
@@ -96,8 +106,31 @@ const headers = ref([
   { title: 'Start date', key: 'start_date' },
   { title: 'End date', key: 'end_date' },
   { title: 'Project', key: 'project_name'},
-  { title: 'Duration', key: 'duration'},
+  { title: 'Duration (pts.)', key: 'duration'},
 ]);
+
+// const userId = await (await supabase.auth.getUser()).data.user?.id;
+// const isScrumMaster = await checkScrumMaster(userId);
+// canEdit.value = isAdmin.value || isScrumMaster;
+
+async function checkScrumMaster() {
+  const userId = await (await supabase.auth.getUser()).data.user?.id;
+
+  const {data, error} = await supabase
+    .from('project_role')
+    .select('role')
+    .eq('user_id', userId)
+    .eq('role', 'scrum_master');
+  if (error) {
+    console.error('Error fetching project roles');
+    return false;
+  } else {
+    isScrumMaster.value = data.length > 0;
+    return data.length > 0;
+    
+  }
+}
+
 
 const items = ref<any[]>([]);
 const isLoading = ref(true);
@@ -194,6 +227,7 @@ async function editSprint() {
 };
 
 const showSprintEdit = (click, item) => {
+  if (!canEdit.value) return;
   sprintData.value.name = item.item.name;
   sprintData.value.id = item.item.id;
   sprintData.value.project_id = item.item.project_id;
@@ -285,5 +319,8 @@ async function fetchSprints() {
     isLoading.value = false;
   }
 }
+watchEffect((isScrumMaster) => {
+  canEdit.value = Boolean(isAdmin.value || isScrumMaster);
+});
 
 </script>

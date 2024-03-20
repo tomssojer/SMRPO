@@ -50,7 +50,7 @@ console.log('user role', userRole.value);
           </v-list-item>
           <v-list-item
             @click="selected = ProductBacklog"
-            prepend-icon="mdi-pencil">
+            prepend-icon="mdi-file-tree">
             <v-list-title>Product backlog</v-list-title>
           </v-list-item>
           <!-- <v-btn @click="$refs.dlgUserStory.show = true" class="dlgButton">New user story</v-btn>
