@@ -42,8 +42,6 @@
             <v-btn class="bg-deep-purple" @click="createProject" style="margin: 0 0 20px 20px">Create</v-btn>
             <v-spacer></v-spacer>
             <v-btn @click="isModalOpen = false, showDatePicker = false" style="margin: 0 20px 20px 0">Close</v-btn>
-            <v-spacer></v-spacer>
-
           </v-card-actions>
         </v-card>
       </v-dialog>
@@ -89,12 +87,11 @@
           </v-card-text>
           <v-card-actions>
             <v-btn class="bg-deep-purple" @click="updateProject" style="margin: 0 0 20px 20px">Update</v-btn>
+            <v-btn class="bg-deep-purple" @click="showSprintCreate = true" style="margin: 0 0 20px 20px">Create new
+            sprint</v-btn>
             <v-spacer></v-spacer>
             <v-btn @click="isEditModalOpen = false, showDatePicker = false, editProjectAlert = false"
               style="margin: 0 20px 20px 0">Close</v-btn>
-            <v-spacer></v-spacer>
-            <v-btn class="bg-deep-purple" @click="showSprintCreate = true" style="margin: 0 0 20px 20px">Create new
-              sprint</v-btn>
             <v-dialog v-model="showSprintCreate" class="dlgWindow" width="50%">
               <v-card title="New sprint">
                 <v-card-text>
