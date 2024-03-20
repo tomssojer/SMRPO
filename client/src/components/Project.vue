@@ -1,9 +1,10 @@
 <template>
   <div style="height: 100vh; overflow: hidden;">
-    <div style="margin: 30px auto; max-width: 80%;">
-      <v-btn class="bg-deep-purple" theme="dark" style="margin: 30px 0;" v-if="isAdmin" @click="openModal">
+    <v-btn class="bg-deep-purple" theme="dark" style="margin: 30px 0;" v-if="isAdmin" @click="openModal">
         New project
       </v-btn>
+    <div style="margin: 30px auto; max-width: 80%;">
+      
 
       <v-dialog v-model="isModalOpen" style="max-width: 800px;">
         <v-card>
@@ -41,6 +42,54 @@
             <v-btn class="bg-deep-purple" @click="createProject" style="margin: 0 0 20px 20px">Create</v-btn>
             <v-spacer></v-spacer>
             <v-btn @click="isModalOpen = false, showDatePicker = false" style="margin: 0 20px 20px 0">Close</v-btn>
+            <v-spacer></v-spacer>
+            
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
+
+      <v-dialog v-model="isEditModalOpen" style="max-width: 800px">
+        <v-card>
+          <v-card-title class="headline">Edit project</v-card-title>
+          <v-card-text>
+            <v-form ref="updateForm">
+                  <v-alert v-if="editProjectAlert" type="error">
+                    Invalid input data. Project name already exists or project owner is scrum master/part of developers.
+                  </v-alert>
+                  <v-alert v-if="showProjectSuccessMessage" type="success">
+                    Project edited successfully!
+                  </v-alert>
+              <v-row dense>
+                <v-col cols="12">
+                  <v-text-field v-model="selectedProject.name" :rules="checkEmpty('Name')" label="Name"></v-text-field>
+                </v-col>
+              </v-row>
+              <v-textarea v-model="selectedProject.description" :rules="checkEmpty('Description')" label="Describe this project"></v-textarea>
+              <v-row>
+                <v-col cols="12">
+                  <v-select v-model="selectedProject.productOwner" :items="user_names" label="Product Owner"
+                  :rules="checkEmpty('Product Owner')">
+                  </v-select>
+                </v-col>
+              </v-row>
+              <v-row>
+                <v-col cols="12">
+                  <v-select v-model="selectedProject.scrumMaster" :items="user_names" item-text="name" item-value="id"
+                    label="Scrum Master" :rules="checkEmpty('Scrum Master')"></v-select>
+                </v-col>
+              </v-row>
+              <v-row>
+                <v-col cols="12">
+                  <v-select v-model="selectedProject.developers" :items="user_names" item-text="name" item-value="id"
+                    label="Developers" multiple :rules="checkEmpty('Developers', true)"></v-select>
+                </v-col>
+              </v-row>
+            </v-form>
+          </v-card-text>
+          <v-card-actions>
+            <v-btn class="bg-deep-purple" @click="updateProject" style="margin: 0 0 20px 20px">Update</v-btn>
+            <v-spacer></v-spacer>
+            <v-btn @click="isEditModalOpen = false, showDatePicker = false, editProjectAlert = false" style="margin: 0 20px 20px 0">Close</v-btn>
             <v-spacer></v-spacer>
             <v-btn class="bg-deep-purple" @click="showSprintCreate = true" style="margin: 0 0 20px 20px">Create new
           sprint</v-btn>
@@ -154,7 +203,7 @@ const developers = ref([]);
 
 const isAdmin = ref(false);
 const isModalOpen = ref(false);
-const isTmpProjectViewOpen = ref(false);
+
 const isLoading = ref(true);
 const items = ref<any[]>([]);
 
@@ -181,7 +230,11 @@ const headers = ref([
   { title: '', key: 'action', sortable: false },
 ]);
 
+const editProjectAlert = ref(false);
+const showProjectSuccessMessage = ref(false);
+
 const selectedProject = ref({
+  id: '',
   name: '',
   description: '',
   productOwner: '',
@@ -190,61 +243,78 @@ const selectedProject = ref({
 });
 const isEditModalOpen = ref(false);
 
+async function getUserRoles(projectId: number, project: any) {
+  let isSuccessful = false;
+  const { data: roles, error } = await supabase
+    .from('project_role')
+    .select('user_id, role')
+    .eq('project_id', projectId);
+      
+    if (error) {
+    console.error('Error fetching project roles', error);
+  } else {
+    const userPromises = roles.map(async (role) => {
+      const { data: userProfile, error: userError } = await supabase
+        .from('user_profile')
+        .select('name, surname')
+        .eq('user_id', role.user_id)
+        .single();
+
+      if (userError) {
+        console.error('Error fetching user profile', userError);
+        return;
+      }
+
+      if (userProfile) {
+        const fullName = `${userProfile.name} ${userProfile.surname}`;
+        switch (role.role) {
+          case 'product_owner':
+            project.productOwner = fullName;
+            break;
+          case 'scrum_master':
+            project.scrumMaster = fullName;
+            break;
+          case 'developer':
+            project.developers = project.developers || [];
+            project.developers.push(fullName);
+            break;
+          default:
+            // Handle any other roles or ignore
+            break;
+        }
+      }
+    });
+
+    // Wait for all user profile fetches to complete
+    await Promise.all(userPromises);
+    isSuccessful = true; // Set success to true if everything completes without error
+  }
+
+  // Return both the project and the operation success status
+  return { project, isSuccessful };
+}
+
 async function openEditModal(project: any) {
   if (project) {
-    project.developers = [];
+    project.developers = []; // Reset developers array
+    const { project: updatedProject, isSuccessful } = await getUserRoles(project.id, project);
 
-    await supabase
-      .from('project_role')
-      .select('user_id, role')
-      .eq('project_id', project.id)
-      .then(async ({ data, error }) => {
-        if (error) {
-          console.error('Error fetching project roles');
-        } else {
-          for (const role of data) {
-            const user = (await supabase.auth.getUser()).data.user;
-            const userId = user?.id;
-
-            const username = await supabase
-              .from('user_profile')
-              .select('name, surname')
-              .eq('user_id', userId)
-              .single();
-
-            if (username.data) {
-              if (role.role === 'product_owner') {
-                project.productOwner = username.data.name + " " + username.data.surname;
-              } else if (role.role === 'scrum_master') {
-                project.scrumMaster = username.data.name + " " + username.data.surname;
-              } else if (role.role === 'developer') {
-                project.developers = project.developers || [];
-                project.developers.push(username.data.name + " " + username.data.surname);
-              }
-            }
-          }
-        }
-      });
-    selectedProject.value = Object.assign({}, project);
-    isEditModalOpen.value = true;
-    showDatePicker.value = false;
+    if (isSuccessful) {
+      selectedProject.value = Object.assign({}, updatedProject);
+      isEditModalOpen.value = true;
+      showDatePicker.value = false;
+      console.log(selectedProject.value);
+    }
   } else {
-    console.log("Error opening edit modal")
+    console.log("Error opening edit modal");
   }
 }
 
 const openModal = () => {
   isModalOpen.value = true;
   showDatePicker.value = false;
-  showDatePicker.value = false;
 };
 
-const openTmpProjectView = (click, item) => {
-  console.log(item.item)
-  currentProjectId.value = item.item.id;
-  isTmpProjectViewOpen.value = true;
-  console.log('currentProjectId', currentProjectId.value);
-};
 
 const minDate = new Date().toISOString().split('T')[0];
 const showSprintError = ref(false);
@@ -449,7 +519,7 @@ async function createProject(this: any) {
       name: name.value,
       description: description.value,
       organization_id: localStorage.getItem('organizationId'),
-    }]);
+    }]).select();
 
   if (error) {
     console.error("Error creating project")
@@ -498,16 +568,47 @@ async function createProject(this: any) {
 async function updateProject() {
   updateForm.value.validate();
   const isFormValid = validateForm([selectedProject.value.name, selectedProject.value.productOwner, selectedProject.value.scrumMaster, selectedProject.value.developers]);
-  if (!isFormValid) return;
+  if (!isFormValid) {
+    editProjectAlert.value = true;
+    return;
+  } else {
+    editProjectAlert.value = false;
+    showProjectSuccessMessage.value = true;
+  }
 
   const { error } = await supabase
     .from('project')
-    .update({name: selectedProject.value.name})
+    .update({name: selectedProject.value.name, description: selectedProject.value.description})
     .eq('id', selectedProject.value.id);
 
   if (error) {
     console.error("Error updating project")
   } else {
+    let productOwner = selectedProject.value.productOwner
+    let scrumMaster = selectedProject.value.scrumMaster
+    let developers = selectedProject.value.developers
+
+    const po = await supabase
+      .from('user_profile')
+      .select('user_id')
+      .eq('name', productOwner.split(' ')[0])
+      .eq('surname', productOwner.split(' ')[1])
+      .single();
+
+    const sm = await supabase
+      .from('user_profile')
+      .select('user_id')
+      .eq('name', scrumMaster.split(' ')[0])
+      .eq('surname', scrumMaster.split(' ')[1])
+      .single();
+
+    const devs = await supabase
+      .from('user_profile')
+      .select('user_id')
+      .in('name', developers.map((name: string) => name.split(' ')[0]))
+      .in('surname', developers.map((name: string) => name.split(' ')[1]));
+
+
     await supabase
       .from('project_role')
       .delete()
@@ -516,18 +617,50 @@ async function updateProject() {
     await supabase
       .from('project_role')
       .insert([
-        { project_id: selectedProject.value.id, user_id: selectedProject.value.productOwner, role: 'product_owner' },
-        // { project_id: selectedProject.value.id, user_id: selectedProject.value.scrumMaster, role: 'scrum_master' },
-        // ...selectedProject.value.developers.map((id: number) => ({ project_id: selectedProject.value.id, user_id: id, role: 'developer' }))
+        { project_id: selectedProject.value.id, user_id: po.data?.user_id, role: 'product_owner' },
+        { project_id: selectedProject.value.id, user_id: sm.data?.user_id, role: 'scrum_master' },
+        ...devs.data?.map((item: { user_id: any }) => ({ project_id: selectedProject.value.id, user_id: item.user_id, role: 'developer' })) || []
       ]);
       getProjects();
-      isEditModalOpen.value = false;
+      setTimeout(() => {
+        showProjectSuccessMessage.value = false;
+        editProjectAlert.value = false;
+        isEditModalOpen.value = false;
+      }, 3000);
+      
     }
 }
 
 
 const validateForm = (formItems: any[]) => {
   console.log(formItems)
-  return formItems.every((item: any) => !!item);
+  // make sure project name is not the same as existing projects.
+  // make sure project owner != scrum master and project owner is not part of devs
+  if (!formItems.every((item: any) => !!item)) {
+    return false;
+  }
+  let duplicateName = false;
+  items.value.forEach((item: any) => {
+    console.log(item.name.toLowerCase(), formItems[0].toLowerCase())
+    console.log(item.name.toLowerCase() === formItems[0].toLowerCase())
+    console.log(item.id !== selectedProject.value.id)
+    console.log(item.id, selectedProject.value.id)
+    if (item.name.toLowerCase() === formItems[0].toLowerCase() && item.id !== selectedProject.value.id) {
+      console.log('should return false');
+      duplicateName = true;
+    }
+  });
+  if (duplicateName) {
+    return false;
+  }
+  if (formItems[1] === formItems[2]) {
+    // project owner same as scrum master
+    return false;
+  }
+  if (formItems[1] in formItems[3]) {
+    // project owner is part of developers
+    return false;
+  }
+  return true;
 }
 </script>
