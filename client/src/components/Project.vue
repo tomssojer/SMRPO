@@ -10,6 +10,12 @@
           <v-card-title class="headline">Create a new project</v-card-title>
           <v-card-text>
             <v-form ref="createForm">
+              <v-alert v-if="createProjectAlert" type="error">
+                Invalid input data. Project name already exists or project owner is scrum master/part of developers.
+              </v-alert>
+              <v-alert v-if="showProjectSuccessMessage" type="success">
+                Project created successfully!
+              </v-alert>
               <v-row dense>
                 <v-col cols="12">
                   <v-text-field v-model="name" label="Name" :rules="checkEmpty('Name')"></v-text-field>
@@ -41,7 +47,7 @@
           <v-card-actions>
             <v-btn class="bg-deep-purple" @click="createProject" style="margin: 0 0 20px 20px">Create</v-btn>
             <v-spacer></v-spacer>
-            <v-btn @click="isModalOpen = false, showDatePicker = false" style="margin: 0 20px 20px 0">Close</v-btn>
+            <v-btn @click="isModalOpen = false, createProjectAlert = false" style="margin: 0 20px 20px 0">Close</v-btn>
           </v-card-actions>
         </v-card>
       </v-dialog>
@@ -90,7 +96,7 @@
             <v-btn class="bg-deep-purple" @click="showSprintCreate = true" style="margin: 0 0 20px 20px">Create new
             sprint</v-btn>
             <v-spacer></v-spacer>
-            <v-btn @click="isEditModalOpen = false, showDatePicker = false, editProjectAlert = false"
+            <v-btn @click="isEditModalOpen = false, editProjectAlert = false"
               style="margin: 0 20px 20px 0">Close</v-btn>
             <v-dialog v-model="showSprintCreate" class="dlgWindow" width="50%">
               <v-card title="New sprint">
@@ -161,13 +167,28 @@
       </v-dialog>
 
       <div v-if="isLoading">Loading...</div>
-      <v-data-table style="margin: auto;" v-else :headers="headers" :items="items" show-expand>
+      <v-data-table style="margin: auto;" v-else :headers="headers" :items="items" show-expand @expanded="getProjectRoles">
         <template v-slot:item.action="{ item }">
           <v-btn v-if="canEdit" class="bg-deep-purple" size="30" @click="openEditModal(item)">
             <v-icon size="medium20">mdi-pencil</v-icon>
           </v-btn>
         </template>
         <template v-slot:expanded-row="{ columns, item }">
+          <tr>
+            <td :colspan="columns.length">
+              Product Owner: <b>{{ item.productOwner }}</b>
+            </td>
+          </tr>
+          <tr>
+            <td :colspan="columns.length">
+              Scrum Master: <b>{{ item.scrumMaster }}</b>
+            </td>
+          </tr>
+          <tr>
+            <td :colspan="columns.length">
+                Developers: <b>{{ item.developers.join(', ') }}</b>
+            </td>
+          </tr>
           <tr>
             <td :colspan="columns.length">
               Description: {{ item.description }}
@@ -182,8 +203,7 @@
 <script setup lang="ts">
 import { supabase } from "../lib/supabaseClient";
 import { onMounted, ref } from 'vue';
-import { formatDate, formatDateTime } from '../lib/dateFormatter';
-import { de } from "vuetify/locale";
+import { formatDateTime } from '../lib/dateFormatter';
 
 onMounted(() => {
   getProjects();
@@ -204,8 +224,6 @@ const canEdit = ref(false);
 
 const isLoading = ref(true);
 const items = ref<any[]>([]);
-
-const showDatePicker = ref(false);
 
 const currentProjectId = ref(0);
 
@@ -229,6 +247,7 @@ const headers = ref([
 ]);
 
 const editProjectAlert = ref(false);
+const createProjectAlert = ref(false);
 const showProjectSuccessMessage = ref(false);
 
 const selectedProject = ref({
@@ -294,22 +313,28 @@ async function getUserRoles(projectId: number, project: any) {
 
 async function openEditModal(project: any) {
   if (project) {
-    project.developers = []; // Reset developers array
-    const { project: updatedProject, isSuccessful } = await getUserRoles(project.id, project);
+    selectedProject.value = Object.assign({}, project);
+    isEditModalOpen.value = true;
+  }
+}
 
-    if (isSuccessful) {
-      selectedProject.value = Object.assign({}, updatedProject);
-      isEditModalOpen.value = true;
-      showDatePicker.value = false;
-    }
-  } else {
-    console.log("Error opening edit modal");
+async function getProjectRoles({ item }: any) {
+  currentProjectId.value = item.id;
+  const { project, isSuccessful } = await getUserRoles(item.id, item);
+
+  if (isSuccessful) {
+    selectedProject.value = Object.assign({}, project);
   }
 }
 
 const openModal = () => {
+  createProjectAlert.value = false;
   isModalOpen.value = true;
-  showDatePicker.value = false;
+  name.value = '';
+  description.value = '';
+  productOwner.value = null;
+  scrumMaster.value = null;
+  developers.value = [];
 };
 
 
@@ -476,6 +501,10 @@ async function checkScrumMaster(userId: any) {
 }
 
 async function getProjects() {
+  const userId = await (await supabase.auth.getUser()).data.user?.id;
+  const isScrumMaster = await checkScrumMaster(userId);
+  canEdit.value = isAdmin.value || isScrumMaster;
+  
   const organizationId = localStorage.getItem('organizationId');
   const { data, error } = await supabase
     .from('project')
@@ -493,9 +522,16 @@ async function getProjects() {
     isLoading.value = false;
   }
 
-  const userId = await (await supabase.auth.getUser()).data.user?.id;
-  const isScrumMaster = await checkScrumMaster(userId);
-  canEdit.value = isAdmin.value || isScrumMaster;
+
+  for (const item of items.value) {
+    const { project, isSuccessful } = await getUserRoles(item.id, item);
+
+    if (isSuccessful) {
+      item.productOwner = project.productOwner;
+      item.scrumMaster = project.scrumMaster;
+      item.developers = project.developers;
+    }
+  }
 }
 
 async function getUsers() {
@@ -513,9 +549,22 @@ async function getUsers() {
 }
 
 async function createProject(this: any) {
-  createForm.value.validate();
-  const isFormValid = validateForm([name.value, productOwner.value, scrumMaster.value, developers.value]);
-  if (!isFormValid) return;
+  if (createForm.value) {
+    const createFormValue = createForm.value as { validate: () => void };
+    createFormValue.validate();
+  }
+  const formItems = [name.value, productOwner.value, scrumMaster.value, developers.value];
+  if (!formItems.every((item: any) => !!item)) {
+    return;
+  }
+  const isFormValid = validateForm(formItems);
+  if (!isFormValid) {
+    createProjectAlert.value = true;  
+    return;
+  }
+
+  createProjectAlert.value = false;
+  showProjectSuccessMessage.value = true;
 
   const { data, error } = await supabase
     .from('project')
@@ -564,14 +613,24 @@ async function createProject(this: any) {
       console.error("Error creating project role")
     } else {
       getProjects();
+      setTimeout(() => {
+      showProjectSuccessMessage.value = false;
+      createProjectAlert.value = false;
       isModalOpen.value = false;
+    }, 1000);
     }
   }
 }
 
 async function updateProject() {
-  updateForm.value.validate();
-  const isFormValid = validateForm([selectedProject.value.name, selectedProject.value.productOwner, selectedProject.value.scrumMaster, selectedProject.value.developers]);
+  if (updateForm.value) {
+    updateForm.value.validate();
+  }
+  const formItems = [selectedProject.value.name, selectedProject.value.productOwner, selectedProject.value.scrumMaster, selectedProject.value.developers];
+  if (!formItems.every((item: any) => !!item)) {
+    return;
+  }
+  const isFormValid = validateForm(formItems);
   if (!isFormValid) {
     editProjectAlert.value = true;
     return;
@@ -630,27 +689,18 @@ async function updateProject() {
       showProjectSuccessMessage.value = false;
       editProjectAlert.value = false;
       isEditModalOpen.value = false;
-    }, 3000);
+    }, 1000);
 
   }
 }
 
 
 const validateForm = (formItems: any[]) => {
-  console.log(formItems)
   // make sure project name is not the same as existing projects.
   // make sure project owner != scrum master and project owner is not part of devs
-  if (!formItems.every((item: any) => !!item)) {
-    return false;
-  }
   let duplicateName = false;
   items.value.forEach((item: any) => {
-    console.log(item.name.toLowerCase(), formItems[0].toLowerCase())
-    console.log(item.name.toLowerCase() === formItems[0].toLowerCase())
-    console.log(item.id !== selectedProject.value.id)
-    console.log(item.id, selectedProject.value.id)
     if (item.name.toLowerCase() === formItems[0].toLowerCase() && item.id !== selectedProject.value.id) {
-      console.log('should return false');
       duplicateName = true;
     }
   });
@@ -661,9 +711,12 @@ const validateForm = (formItems: any[]) => {
     // project owner same as scrum master
     return false;
   }
-  if (formItems[1] in formItems[3]) {
-    // project owner is part of developers
-    return false;
+
+  for (const dev of formItems[3]) {
+    if (formItems[1] === dev || formItems[2] === dev) {
+      // project owner is part of developers
+      return false;
+    }
   }
   return true;
 }
