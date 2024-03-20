@@ -38,7 +38,7 @@
         <v-card-actions>
           <v-spacer></v-spacer>
           <v-btn text="Close" variant="text" @click="show = false"></v-btn>
-          <v-btn text="Save" variant="text" @click="saveNewUser" type="submit"></v-btn>
+          <v-btn class="bg-deep-purple" text="Save" variant="text" @click="saveNewUser" type="submit"></v-btn>
         </v-card-actions>
       </v-form>
 
