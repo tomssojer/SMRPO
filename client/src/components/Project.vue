@@ -1,10 +1,9 @@
 <template>
   <div style="height: 100vh; overflow: hidden;">
-    <v-btn class="bg-deep-purple" theme="dark" style="margin: 30px 0;" v-if="isAdmin" @click="openModal">
+    <div style="margin: 30px auto; max-width: 80%;">
+      <v-btn class="bg-deep-purple" theme="dark" style="margin: 30px 0;" v-if="isAdmin" @click="openModal">
         New project
       </v-btn>
-    <div style="margin: 30px auto; max-width: 80%;">
-      
 
       <v-dialog v-model="isModalOpen" style="max-width: 800px;">
         <v-card>
@@ -16,11 +15,12 @@
                   <v-text-field v-model="name" label="Name" :rules="checkEmpty('Name')"></v-text-field>
                 </v-col>
               </v-row>
-              <v-textarea v-model="description" label="Describe this project" :rules="checkEmpty('Description')"></v-textarea>
+              <v-textarea v-model="description" label="Describe this project"
+                :rules="checkEmpty('Description')"></v-textarea>
               <v-row>
                 <v-col cols="12">
                   <v-select v-model="productOwner" :items="user_names" label="Product Owner"
-                  :rules="checkEmpty('Product Owner')">
+                    :rules="checkEmpty('Product Owner')">
                   </v-select>
                 </v-col>
               </v-row>
@@ -43,7 +43,7 @@
             <v-spacer></v-spacer>
             <v-btn @click="isModalOpen = false, showDatePicker = false" style="margin: 0 20px 20px 0">Close</v-btn>
             <v-spacer></v-spacer>
-            
+
           </v-card-actions>
         </v-card>
       </v-dialog>
@@ -53,22 +53,23 @@
           <v-card-title class="headline">Edit project</v-card-title>
           <v-card-text>
             <v-form ref="updateForm">
-                  <v-alert v-if="editProjectAlert" type="error">
-                    Invalid input data. Project name already exists or project owner is scrum master/part of developers.
-                  </v-alert>
-                  <v-alert v-if="showProjectSuccessMessage" type="success">
-                    Project edited successfully!
-                  </v-alert>
+              <v-alert v-if="editProjectAlert" type="error">
+                Invalid input data. Project name already exists or project owner is scrum master/part of developers.
+              </v-alert>
+              <v-alert v-if="showProjectSuccessMessage" type="success">
+                Project edited successfully!
+              </v-alert>
               <v-row dense>
                 <v-col cols="12">
                   <v-text-field v-model="selectedProject.name" :rules="checkEmpty('Name')" label="Name"></v-text-field>
                 </v-col>
               </v-row>
-              <v-textarea v-model="selectedProject.description" :rules="checkEmpty('Description')" label="Describe this project"></v-textarea>
+              <v-textarea v-model="selectedProject.description" :rules="checkEmpty('Description')"
+                label="Describe this project"></v-textarea>
               <v-row>
                 <v-col cols="12">
                   <v-select v-model="selectedProject.productOwner" :items="user_names" label="Product Owner"
-                  :rules="checkEmpty('Product Owner')">
+                    :rules="checkEmpty('Product Owner')">
                   </v-select>
                 </v-col>
               </v-row>
@@ -89,76 +90,75 @@
           <v-card-actions>
             <v-btn class="bg-deep-purple" @click="updateProject" style="margin: 0 0 20px 20px">Update</v-btn>
             <v-spacer></v-spacer>
-            <v-btn @click="isEditModalOpen = false, showDatePicker = false, editProjectAlert = false" style="margin: 0 20px 20px 0">Close</v-btn>
+            <v-btn @click="isEditModalOpen = false, showDatePicker = false, editProjectAlert = false"
+              style="margin: 0 20px 20px 0">Close</v-btn>
             <v-spacer></v-spacer>
             <v-btn class="bg-deep-purple" @click="showSprintCreate = true" style="margin: 0 0 20px 20px">Create new
-          sprint</v-btn>
-        <v-dialog v-model="showSprintCreate" class="dlgWindow" width="50%">
-          <v-card title="New sprint">
-            <v-card-text>
-              <!-- Edit start date, end date and name -->
-              <v-row dense>
-                <!-- row to show errors when entering things -->
-                <v-col cols="12">
-                  <v-alert id="sprintError" v-if="showSprintError" type="error" elevation="2" colored>
-                    Start and end date must be weekdays, and not in the past.
-                    Start date must be before end date.
-                  </v-alert>
-                  <v-alert v-if="sprintOverlap">
-                    Overlap with existing sprint, please change dates or name.
-                  </v-alert>
-                  <v-alert v-if="showSuccessMessage" type="success">
-                    Sprint created successfully!
-                  </v-alert>
+              sprint</v-btn>
+            <v-dialog v-model="showSprintCreate" class="dlgWindow" width="50%">
+              <v-card title="New sprint">
+                <v-card-text>
+                  <!-- Edit start date, end date and name -->
+                  <v-row dense>
+                    <!-- row to show errors when entering things -->
+                    <v-col cols="12">
+                      <v-alert id="sprintError" v-if="showSprintError" type="error" elevation="2" colored>
+                        Start and end date must be weekdays, and not in the past.
+                        Start date must be before end date.
+                      </v-alert>
+                      <v-alert v-if="sprintOverlap">
+                        Overlap with existing sprint, please change dates or name.
+                      </v-alert>
+                      <v-alert v-if="showSuccessMessage" type="success">
+                        Sprint created successfully!
+                      </v-alert>
 
 
-                </v-col>
-                <v-col cols="7">
-                  <v-text-field v-model="sprintData.name" label="Name" required></v-text-field>
-                </v-col>
+                    </v-col>
+                    <v-col cols="7">
+                      <v-text-field v-model="sprintData.name" label="Name" required></v-text-field>
+                    </v-col>
+                    <v-divider></v-divider>
+
+                    <v-col cols="4">
+                      <v-menu v-model="showDatePickerStart" :close-on-content-click="false" :nudge-right="40"
+                        transition="scale-transition" offset-y min-width="290px">
+                        <template v-slot:activator="{ on, attrs }">
+                          <v-text-field v-model="sprintData.start_date" @click="showDatePickerStart = true"
+                            label="Start date" prepend-icon="mdi-calendar" v-bind="attrs" v-on="on"></v-text-field>
+
+                          <v-date-picker v-model="sprintData.start_date" @input="showDatePickerStart = false"
+                            v-if="showDatePickerStart" no-title>
+                            <v-spacer></v-spacer>
+
+                          </v-date-picker>
+                        </template>
+                      </v-menu>
+                    </v-col>
+                    <!-- <v-divider></v-divider> -->
+                    <v-col cols="4">
+                      <v-menu v-model="showDatePickerEnd" :close-on-content-click="false" :nudge-right="40"
+                        transition="scale-transition" offset-y min-width="290px">
+                        <template v-slot:activator="{ on, attrs }">
+                          <v-text-field v-model="sprintData.end_date" @click="showDatePickerEnd = true" label="End date"
+                            prepend-icon="mdi-calendar" v-bind="attrs" v-on="on"></v-text-field>
+
+                          <v-date-picker v-model="sprintData.end_date" v-if="showDatePickerEnd"
+                            no-title></v-date-picker>
+                        </template>
+                      </v-menu>
+                    </v-col>
+                  </v-row>
+                </v-card-text>
+
                 <v-divider></v-divider>
-
-                <v-col cols="4">
-                  <v-menu v-model="showDatePickerStart" :close-on-content-click="false" :nudge-right="40"
-                    transition="scale-transition" offset-y min-width="290px">
-                    <template v-slot:activator="{ on, attrs }">
-                    <v-text-field v-model="sprintData.start_date" @click="showDatePickerStart = true" label="Start date"
-                      prepend-icon="mdi-calendar" v-bind="attrs"
-                        v-on="on"></v-text-field>
-
-                    <v-date-picker v-model="sprintData.start_date" @input="showDatePickerStart = false"
-                      v-if="showDatePickerStart" no-title>
-                      <v-spacer></v-spacer>
-
-                    </v-date-picker>
-                  </template>
-                  </v-menu>
-                </v-col>
-                <!-- <v-divider></v-divider> -->
-                <v-col cols="4" >
-                  <v-menu v-model="showDatePickerEnd" :close-on-content-click="false" :nudge-right="40"
-                    transition="scale-transition" offset-y min-width="290px">
-                    <template v-slot:activator="{ on, attrs }">
-                  <v-text-field v-model="sprintData.end_date" @click="showDatePickerEnd = true" label="End date"
-                    prepend-icon="mdi-calendar" v-bind="attrs"
-                        v-on="on"></v-text-field>
-
-                  <v-date-picker v-model="sprintData.end_date" v-if="showDatePickerEnd" no-title
-                     ></v-date-picker>
-                  </template>
-                  </v-menu>
-                </v-col>
-              </v-row>
-            </v-card-text>
-
-            <v-divider></v-divider>
-            <v-card-actions>
-              <v-spacer></v-spacer>
-              <v-btn text="Close" variant="text" @click="showSprintCreate = false"></v-btn>
-              <v-btn text="Save" variant="text" @click="saveSprint"></v-btn>
-            </v-card-actions>
-          </v-card>
-        </v-dialog>
+                <v-card-actions>
+                  <v-spacer></v-spacer>
+                  <v-btn text="Close" variant="text" @click="showSprintCreate = false"></v-btn>
+                  <v-btn text="Save" variant="text" @click="saveSprint"></v-btn>
+                </v-card-actions>
+              </v-card>
+            </v-dialog>
           </v-card-actions>
         </v-card>
       </v-dialog>
@@ -171,12 +171,12 @@
           </v-btn>
         </template>
         <template v-slot:expanded-row="{ columns, item }">
-      <tr>
-        <td :colspan="columns.length">
-          Description: {{ item.description }}
-        </td>
-      </tr>
-    </template>
+          <tr>
+            <td :colspan="columns.length">
+              Description: {{ item.description }}
+            </td>
+          </tr>
+        </template>
       </v-data-table>
     </div>
   </div>
@@ -225,7 +225,7 @@ const checkEmpty = (field, isMultiple = false) => {
 
 const headers = ref([
   { title: 'Name', key: 'name' },
-  {title: 'Project id', key: 'id'},
+  { title: 'Project id', key: 'id' },
   { title: 'Created at', key: 'created_at' },
   { title: '', key: 'action', sortable: false },
 ]);
@@ -249,8 +249,8 @@ async function getUserRoles(projectId: number, project: any) {
     .from('project_role')
     .select('user_id, role')
     .eq('project_id', projectId);
-      
-    if (error) {
+
+  if (error) {
     console.error('Error fetching project roles', error);
   } else {
     const userPromises = roles.map(async (role) => {
@@ -438,7 +438,7 @@ async function saveSprint() {
 
   console.log(JSON.stringify(sprintData.value));
 
-  
+
 
 }
 
@@ -468,9 +468,6 @@ const countWeekdays = (startDate, endDate) => {
 }
 
 
-
-
-
 async function getProjects() {
   const organizationId = localStorage.getItem('organizationId');
   const { data, error } = await supabase
@@ -489,7 +486,7 @@ async function getProjects() {
       item.start_date = formatDate(item.start_date);
       item.deadline = formatDate(item.deadline);
     });
-   
+
     isLoading.value = false;
   }
 }
@@ -527,7 +524,7 @@ async function createProject(this: any) {
     getProjects();
     isModalOpen.value = false;
     const projectId = data[0].id;
-    
+
     const po = await supabase
       .from('user_profile')
       .select('user_id')
@@ -578,7 +575,7 @@ async function updateProject() {
 
   const { error } = await supabase
     .from('project')
-    .update({name: selectedProject.value.name, description: selectedProject.value.description})
+    .update({ name: selectedProject.value.name, description: selectedProject.value.description })
     .eq('id', selectedProject.value.id);
 
   if (error) {
@@ -621,14 +618,14 @@ async function updateProject() {
         { project_id: selectedProject.value.id, user_id: sm.data?.user_id, role: 'scrum_master' },
         ...devs.data?.map((item: { user_id: any }) => ({ project_id: selectedProject.value.id, user_id: item.user_id, role: 'developer' })) || []
       ]);
-      getProjects();
-      setTimeout(() => {
-        showProjectSuccessMessage.value = false;
-        editProjectAlert.value = false;
-        isEditModalOpen.value = false;
-      }, 3000);
-      
-    }
+    getProjects();
+    setTimeout(() => {
+      showProjectSuccessMessage.value = false;
+      editProjectAlert.value = false;
+      isEditModalOpen.value = false;
+    }, 3000);
+
+  }
 }
 
 
