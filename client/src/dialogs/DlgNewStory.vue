@@ -13,13 +13,13 @@
         <v-card-text>
           <v-row dense>
             <v-col cols="7">
-              <v-text-field v-model="dlgData.name" label="Title" :rules="checkEmpty" required></v-text-field>
+              <v-text-field v-model="dlgData.name" label="Title" :rules="checkEmpty" :disabled="!isScrum && !isOwner" required></v-text-field>
             </v-col>
             <v-col cols="3">
-              <v-select v-model="dlgData.priority" label="Priority" :items="prio" :rules="checkEmpty" required></v-select>
+              <v-select v-model="dlgData.priority" label="Priority" :items="prio" :rules="checkEmpty" :disabled="!isScrum && !isOwner" required></v-select>
             </v-col>
             <v-col>
-              <v-text-field v-model="dlgData.work_value" label="Value" :rules="checkEmpty" required></v-text-field>
+              <v-text-field v-model="dlgData.work_value" label="Value" :rules="checkEmpty" :disabled="!isScrum && !isOwner" required></v-text-field>
             </v-col>
           </v-row>
           <v-row dense>
@@ -27,23 +27,25 @@
             label="Description"
             clearable
             v-model="dlgData.description"
+            :disabled="!isScrum && !isOwner"
             ></v-textarea>
           </v-row>
           <v-row dense>
             <v-col cols="3">
-              <v-text-field v-model="dlgData.time" label="Time cost"></v-text-field>
+              <v-text-field v-model="dlgData.time" label="Time cost" :disabled="!isScrum"></v-text-field>
             </v-col>
             <v-col cols="3">
-              <v-select v-model="dlgData.sprint_id" label="Sprint" :items="sprints" item-value="id" item-title="name"></v-select>
+              <v-select v-model="dlgData.sprint_id" label="Sprint" :items="sprints" item-value="id" item-title="name" :disabled="!isScrum"></v-select>
             </v-col>
           </v-row>
           
         </v-card-text>
         <v-divider></v-divider>
         <v-card-actions>
+          <v-btn text="Save" variant="text" @click="saveStory" type="submit" :disabled="!isScrum && !isOwner"></v-btn>
+          <v-btn text="Delete" variant="text" @click="deleteStory" type="submit" v-if="edit" :disabled="!isScrum && !isOwner"></v-btn>
           <v-spacer></v-spacer>
           <v-btn text="Close" variant="text" @click="show = false"></v-btn>
-          <v-btn text="Save" variant="text" @click="saveUserStory" type="submit"></v-btn>
         </v-card-actions>
       </v-form>
     </v-card>
@@ -51,7 +53,7 @@
 </template>
   
   <script lang="ts">
-  import { defineComponent, ref, onMounted } from 'vue';
+  import { defineComponent, ref, onMounted, getCurrentInstance } from 'vue';
   import { supabase } from '../lib/supabaseClient';
 
   export default defineComponent({
@@ -70,10 +72,13 @@
       });
       const checkEmpty = [(value: string) => !!value || 'This field is required'];
       const sprints = ref<any[]>([]);
-
-      const currentProjectId = ref(1); //potrebno pridobiti dejanski project id
+      const instance = ref<any>();
+      const currentProjectId = ref(1);
+      const isScrum = ref(false);
+      const isOwner = ref(false);
 
       onMounted(() => {
+        instance.value = getCurrentInstance();
         fetchSprints();
       });
 
@@ -97,7 +102,7 @@
         }
       }
 
-      const saveUserStory = async () => {
+      const saveStory = async () => {
         if(await checkDuplicate()) //če ime že obstaja, vrne true
           return;
         if (edit.value) {
@@ -137,9 +142,8 @@
           if(error)
             throw error;
           console.log(data);
-          return data;
         }
-  
+        show.value = false;
       }
 
       async function checkDuplicate() {
@@ -153,15 +157,30 @@
         else
           return data.length != 0; 
       }
+
+      async function deleteStory() {
+        console.log(dlgData.value.id);
+        const { error } = await supabase
+          .from('user_story')
+          .delete()
+          .eq('id', dlgData.value.id);
+          if(error)
+            throw error;
+          show.value = false;
+      }
   
       return {
         show,
         edit,
+        isScrum,
+        isOwner,
         prio,
         dlgData,
         sprints,
         checkEmpty,
-        saveUserStory,
+        currentProjectId,
+        saveStory,
+        deleteStory,
       };
     },
   });

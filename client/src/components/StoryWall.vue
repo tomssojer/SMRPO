@@ -44,7 +44,7 @@
         >
           <v-card @click="editStory(item)">
             <v-card-title class="d-flex align-center">
-              <h4>{{ item.raw.name + " (" + item.raw.priority + ") "}} </h4>
+              <h4 class="card-title" >{{ item.raw.name + " (" + item.raw.priority + ") "}} </h4>
             </v-card-title>
             <v-card-text>
               {{ item.raw.description }}
@@ -89,7 +89,7 @@
   
   </div>
 
-  <v-btn @click="newStory" class="dlgButton">New user story</v-btn>
+  <v-btn @click="newStory" class="dlgButton" :disabled="!isScrum && !isOwner">New user story</v-btn>
 </template>
 <script lang="ts">
 import { defineComponent, ref, onMounted, watch } from 'vue';
@@ -110,11 +110,12 @@ export default defineComponent({
     const storiesFinished = ref<any[]>([]);
     const storiesActiveUnassigned = ref<any[]>([]);
     const selectedProject = ref<any>({});
-
+    const userId = ref('');
+    const isScrum = ref(false);
+    const isOwner = ref(false);
 
     const dlgNewStory = ref<any>({});
     const dlgEditStory = ref<any>({});
-
 
     onMounted(() => {
       selectedProject.value = props.selectedProject;
@@ -152,20 +153,38 @@ export default defineComponent({
             }
           });
         });
+        const { data: roles, error } = await supabase
+          .from('project_role')
+          .select('role')
+          .eq('project_id', selectedProject.value.id)
+          .eq('user_id', userId.value);
+        if (error) {
+          console.error(error);
+          return;
+        }
+        roles.forEach(role => {
+          if (role.role == 'scrum_master')
+            isScrum.value = true;
+          if (role.role == 'product_owner')
+            isOwner.value = true;
+        });
       }
     }
 
     function newStory() {
+      dlgNewStory.value.isScrum = isScrum.value;
+      dlgNewStory.value.isOwner = isOwner.value;
       dlgNewStory.value.edit = false;
+      dlgNewStory.value.currentProjectId = selectedProject.value.id;
       dlgNewStory.value.show = true;
-
     }
     function editStory(item: any) {
-      console.log(item)
+      dlgEditStory.value.isScrum = isScrum.value;
+      dlgEditStory.value.isOwner = isOwner.value;
       dlgEditStory.value.dlgData = item.raw;
       dlgEditStory.value.edit = true;
+      dlgEditStory.value.currentProjectId = selectedProject.value.id;
       dlgEditStory.value.show = true;
-
     }
 
     watch(() => props.selectedProject, async (newVal) => {
@@ -175,8 +194,21 @@ export default defineComponent({
       }
     });
 
+    supabase.auth.onAuthStateChange(async (_, session) => {
+    if (session) {
+      const jwt = session.access_token;
+
+      const payload = JSON.parse(atob(jwt.split('.')[1]));
+      userId.value = payload.sub;
+    } else {
+      console.log('The user is not authenticated');
+    }
+  });
+
     return {
       show,
+      isScrum,
+      isOwner,
       search,
       storiesActiveAssigned,
       storiesFinished,
