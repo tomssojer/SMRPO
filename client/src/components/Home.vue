@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router';
 import { supabase } from '../lib/supabaseClient';
-import Organization from './Organization.vue';
 import Project from './Project.vue';
 import User from './User.vue';
 // import StoryWall from './StoryWall.vue';
@@ -29,11 +28,6 @@ console.log('user role', userRole.value);
     <v-layout>
       <v-navigation-drawer class="bg-deep-purple" theme="dark" permanent>
         <v-list color="transparent">
-          <v-list-item
-            @click="selected = Organization"
-            prepend-icon="mdi-domain">
-          <v-list-title>Organizations</v-list-title>
-          </v-list-item>
           <v-list-item
             @click="selected = Project"
             prepend-icon="mdi-view-dashboard">
@@ -83,7 +77,7 @@ import { useStore } from 'vuex';
 export default {
   data() {
     return {
-      selected: Organization, // Add this line
+      selected: Project
     };
   },
 };
