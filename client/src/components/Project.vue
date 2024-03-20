@@ -657,17 +657,8 @@ const validateForm = (formItems: any[]) => {
     // project owner same as scrum master
     return false;
   }
-  let ownerInDevs = false;
-  // if (formItems[1] in formItems[3]) {
-  //   // project owner is part of developers
-  //   return false;
-  // }
-  formItems[3].forEach((dev: any) => {
-    if (formItems[1] === dev) {
-      ownerInDevs = true;
-    }
-  });
-  if (ownerInDevs) {
+  if (formItems[1] in formItems[3]) {
+    // project owner is part of developers
     return false;
   }
   return true;
