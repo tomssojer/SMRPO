@@ -94,7 +94,7 @@
         } else {
           data.forEach((project: any) => {
             project.sprints.forEach((sprint: any) => {
-              sprints.value.push({id: sprint.id, name: sprint.name});
+              sprints.value.push({id: sprint.id, name: sprint.name, project_id: project.id});
             });
           });
           console.log("SPRINTS");
@@ -105,6 +105,17 @@
       const saveStory = async () => {
         if(await checkDuplicate()) //če ime že obstaja, vrne true
           return;
+        let properSprint = false;
+        sprints.value.forEach((sprint) => {
+          if (sprint.id === dlgData.value.sprint_id) {
+            if (sprint.project_id === currentProjectId.value){
+              properSprint = true;
+            }
+          }
+        });
+        if (!properSprint) {
+          return;
+        }
         if (edit.value) {
           console.log('edit');
          // console.log(dlgData.value);
