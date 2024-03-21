@@ -260,6 +260,7 @@ const selectedProject = ref({
 });
 const isEditModalOpen = ref(false);
 
+
 async function getUserRoles(projectId: number, project: any) {
   let isSuccessful = false;
   const { data: roles, error } = await supabase
@@ -315,6 +316,7 @@ async function openEditModal(project: any) {
   if (project) {
     selectedProject.value = Object.assign({}, project);
     isEditModalOpen.value = true;
+    currentProjectId.value = project.id;
   }
 }
 

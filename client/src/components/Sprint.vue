@@ -1,6 +1,6 @@
 <template>
   <v-dialog v-model="showSprintEditDlg" class="dlgWindow" width="50%">
-          <v-card title="New sprint">
+          <v-card title="Edit sprint">
             <v-card-text>
               <!-- Edit start date, end date and name -->
               <v-row dense>
@@ -14,7 +14,7 @@
                     Overlap with existing sprint, please change dates or name.
                   </v-alert>
                   <v-alert v-if="showSuccessMessage" type="success">
-                    Sprint created successfully!
+                    Sprint edited successfully!
                   </v-alert>
 
 
